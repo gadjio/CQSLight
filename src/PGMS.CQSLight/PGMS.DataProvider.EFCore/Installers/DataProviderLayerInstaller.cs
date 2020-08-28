@@ -20,29 +20,25 @@ namespace PGMS.DataProvider.EFCore.Installers
         }
 
 
-        public static void RegisterContext<TDbContext>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory) where TDbContext : BaseDbContext
+        public static void RegisterContext<TDbContext>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory, string appName = "Default", string schema = null) 
+	        where TDbContext : BaseDbContext
         {
 	        var entityRepository = new BaseEntityRepository<TDbContext>(new ConnectionStringProvider(connectionString), contextFactory);
 	        builder.Register(c => entityRepository).As<IUnitOfWorkProvider>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IEntityRepository>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IScopedEntityRepository>().SingleInstance();
-	        builder.Register(c => new DataService<TDbContext>(entityRepository)).As<IDataService>().SingleInstance();
+	        builder.Register(c => new DataService<TDbContext>(entityRepository, appName, schema)).As<IDataService>().SingleInstance();
         }
 
-        //TODO RegisterContextPerWebRequest if needed - Not converted yet
-        //private static void RegisterContextPerWebRequest(ContainerBuilder builder, string connectionString)
-        //{
-        //	builder.Register(c => new ConnectionStringProvider(connectionString)).As<IConnectionStringProvider>().SingleInstance();
-        //	builder.RegisterType<WorkplanManagerEntityRepository>().As<IScopedEntityRepository>().InstancePerLifetimeScope();
-        //	builder.RegisterType<WorkplanManagerEntityRepository>().As<IEntityRepository>().InstancePerLifetimeScope();
-
-        //	var workplanManagerContextFactory = new WorkplanManagerContextFactory();
-        //	workplanManagerContextFactory.InitContextUsage(false);
-
-        //	var entityRepository = new WorkplanManagerEntityRepository(new ConnectionStringProvider(connectionString), workplanManagerContextFactory);
-        //	builder.Register(c => new WorkplanManagerService(entityRepository)).As<IDataService>().SingleInstance();
-        //}
-
-
+        public static void RegisterContext<TDbContext, TDataService>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory, string appName = "Default", string schema = null) 
+	        where TDbContext : BaseDbContext
+            where TDataService : IDataService
+        {
+	        var entityRepository = new BaseEntityRepository<TDbContext>(new ConnectionStringProvider(connectionString), contextFactory);
+	        builder.Register(c => entityRepository).As<IUnitOfWorkProvider>().SingleInstance();
+	        builder.Register(c => entityRepository).As<IEntityRepository>().SingleInstance();
+	        builder.Register(c => entityRepository).As<IScopedEntityRepository>().SingleInstance();
+	        builder.Register(c => new DataService<TDbContext>(entityRepository, appName, schema)).As<TDataService>().SingleInstance();
+        }
     }
 }

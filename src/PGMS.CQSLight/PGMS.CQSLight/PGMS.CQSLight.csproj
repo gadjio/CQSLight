@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
+    <Description>CQS Light framework with DirectBus</Description>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

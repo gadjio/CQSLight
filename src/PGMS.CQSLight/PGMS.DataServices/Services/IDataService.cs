@@ -2,13 +2,7 @@
 
 namespace PGMS.Data.Services
 {
-	public interface ITradeBoardDataService : IDataService
-    { }
-
-    public interface IWorkplanManagerService : IDataService
-    { }
-
-    public interface IDataService
+	public interface IDataService
     {
         long GenerateId();
     }

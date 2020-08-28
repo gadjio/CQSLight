@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Data Layer</Description>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

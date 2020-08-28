@@ -5,6 +5,7 @@ using PGMS.DataProvider.EFCore.Contexts;
 
 namespace PGMS.DataProvider.EFCore.Services
 {  
+
     public class DataService<TDbContext> : IDataService where TDbContext : BaseDbContext
     {
         private static readonly object ConcurrencyLock = new object();
@@ -12,13 +13,16 @@ namespace PGMS.DataProvider.EFCore.Services
         private long currentHi = -1;
         private int currentLo;
 
-        private string ParameterName = "Workplan_webapp";
+        private string ParameterName;
 
         private readonly BaseEntityRepository<TDbContext> entityRepository;
+        private readonly string schema;
 
-        public DataService(BaseEntityRepository<TDbContext> entityRepository)
+        public DataService(BaseEntityRepository<TDbContext> entityRepository, string appName = "Default",string schema = null)
         {
-            this.entityRepository = entityRepository;
+	        this.entityRepository = entityRepository;
+	        this.schema = schema;
+	        ParameterName = appName;
         }
 
         
@@ -47,8 +51,10 @@ namespace PGMS.DataProvider.EFCore.Services
 
         private void MoveNextHi()
         {
-            var updateQuery = $"UPDATE Workplan.SequenceHiLo SET intval=intval+1 WHERE id_parametres='{ParameterName}';";
-            var getValueQuery = $"SELECT id, intval, id_parametres FROM Workplan.SequenceHiLo where id_parametres='{ParameterName}';";
+	        var tablename = string.IsNullOrEmpty(schema) ? "SequenceHiLo" : $"[{schema}].SequenceHiLo";
+
+            var updateQuery = $"UPDATE {tablename} SET intval=intval+1 WHERE id_parametres='{ParameterName}';";
+            var getValueQuery = $"SELECT id, intval, id_parametres FROM {tablename} where id_parametres='{ParameterName}';";
 
             using (var unitOfWork = entityRepository.GetUnitOfWork())
             {
