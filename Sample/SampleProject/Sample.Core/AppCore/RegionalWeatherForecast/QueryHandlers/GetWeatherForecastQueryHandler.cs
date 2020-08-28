@@ -9,7 +9,7 @@ using Sample.Data.Models.WeatherForecast;
 
 namespace Sample.Core.AppCore.RegionalWeatherForecast.QueryHandlers
 {
-	public class GetWeatherForecastQueryHandler : IHandleQuery<GetWeatherForecastQuery, IList<WeatherForecastPresentationModel>>
+	public class GetWeatherForecastQueryHandler : IHandleQuery<GetWeatherForecastQuery, List<WeatherForecastPresentationModel>>
 	{
 		private readonly IEntityRepository entityRepository;
 
@@ -18,7 +18,7 @@ namespace Sample.Core.AppCore.RegionalWeatherForecast.QueryHandlers
 			this.entityRepository = entityRepository;
 		}
 
-		public IList<WeatherForecastPresentationModel> Handle(GetWeatherForecastQuery query)
+		public List<WeatherForecastPresentationModel> Handle(GetWeatherForecastQuery query)
 		{
 			var reportings = GetReportings(query);
 
