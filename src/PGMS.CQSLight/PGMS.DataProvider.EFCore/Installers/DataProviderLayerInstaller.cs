@@ -27,7 +27,10 @@ namespace PGMS.DataProvider.EFCore.Installers
 	        builder.Register(c => entityRepository).As<IUnitOfWorkProvider>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IEntityRepository>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IScopedEntityRepository>().SingleInstance();
-	        builder.Register(c => new DataService<TDbContext>(entityRepository, appName, schema)).As<IDataService>().SingleInstance();
+	        var dataService = new DataService<TDbContext>(entityRepository, appName, schema);
+            builder.Register(c => dataService).As<IDataService>().SingleInstance();
+
+            dataService.InitHiLoTable();
         }
 
         public static void RegisterContext<TDbContext, TDataService>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory, string appName = "Default", string schema = null) 
@@ -38,7 +41,11 @@ namespace PGMS.DataProvider.EFCore.Installers
 	        builder.Register(c => entityRepository).As<IUnitOfWorkProvider>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IEntityRepository>().SingleInstance();
 	        builder.Register(c => entityRepository).As<IScopedEntityRepository>().SingleInstance();
-	        builder.Register(c => new DataService<TDbContext>(entityRepository, appName, schema)).As<TDataService>().SingleInstance();
+	        var dataService = new DataService<TDbContext>(entityRepository, appName, schema);
+	        builder.Register(c => dataService).As<TDataService>().SingleInstance();
+
+	        dataService.InitHiLoTable();
         }
+
     }
 }

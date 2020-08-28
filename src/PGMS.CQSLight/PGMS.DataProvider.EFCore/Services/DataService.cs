@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Contexts;
@@ -47,7 +48,18 @@ namespace PGMS.DataProvider.EFCore.Services
             return result;
         }
 
-
+        public void InitHiLoTable()
+        {
+	        try
+	        {
+		        GenerateId();
+	        }
+	        catch (Exception)
+	        {
+		        var tablename = string.IsNullOrEmpty(schema) ? "SequenceHiLo" : $"[{schema}].SequenceHiLo";
+                entityRepository.ExecuteSqlCommand(entityRepository.GetUnitOfWork(), $"INSERT INTO {tablename}([id_parametres], [intval]) values ('{ParameterName}', 9)");
+	        }
+        }
 
         private void MoveNextHi()
         {
