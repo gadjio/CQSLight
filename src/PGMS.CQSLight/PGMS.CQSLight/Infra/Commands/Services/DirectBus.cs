@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Autofac;
+using Microsoft.Extensions.Logging;
+using PGMS.CQSLight.Extensions;
 using PGMS.Data.Services;
 
 namespace PGMS.CQSLight.Infra.Commands.Services
@@ -16,10 +18,12 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 	public class DirectBus : IBus
 	{
 		private readonly IComponentContext context;
+		private readonly ILogger<IBus> logger;
 
-		public DirectBus(IComponentContext context)
+		public DirectBus(IComponentContext context, ILogger<IBus> logger)
 		{
 			this.context = context;
+			this.logger = logger;
 		}
 
 		
@@ -82,6 +86,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			catch (Exception ex)
 			{
 				transaction.Rollback();
+				logger.LogError(ex.GetErrorDetails());
 				throw;
 			}
 		}
@@ -101,6 +106,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			catch (Exception ex)
 			{
 				transaction.Rollback();
+				logger.LogError(ex.GetErrorDetails());
 				throw;
 			}
 		}
@@ -116,11 +122,11 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 		private void InvokeHandler<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
 		{
-			//logger.Debug("TG: " + makeGenericType.FullName);
+			logger.LogDebug("TG: " + makeGenericType.FullName);
 			var resolveAll = context.ResolveAll(makeGenericType);
 			foreach (var service in resolveAll)
 			{
-				//logger.Debug(service.GetType().FullName);
+				logger.LogDebug(service.GetType().FullName);
 				MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
 				methodInfo.Invoke(service, new object[] { @event, unitOfWork });
 			}
