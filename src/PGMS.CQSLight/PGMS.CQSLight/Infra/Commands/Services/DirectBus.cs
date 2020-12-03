@@ -46,9 +46,19 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			{
 				using (var transaction = unitOfWork.GetTransaction())
 				{
-					InvokeEventHandlers(@event, unitOfWork, transaction);
+					try
+					{
+						InvokeEventHandlers(@event, unitOfWork);
 
-					unitOfWork.Save();
+						transaction.Commit();
+					}
+					catch (Exception ex)
+					{
+						transaction.Rollback();
+						logger.LogError(ex.GetErrorDetails());
+						throw;
+					}
+					
 				}
 			}
 
@@ -62,52 +72,31 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			{
 				using (var transaction = unitOfWork.GetTransaction())
 				{
-					InvokeEventHandlers(@events, unitOfWork, transaction);
-					unitOfWork.Save();
-				}
-			}
-		}
-
-		private void InvokeEventHandlers<T>(IEnumerable<T> events, IUnitOfWork unitOfWork, IUnitOfWorkTransaction transaction) where T : class, IEvent
-		{
-			try
-			{
-				foreach (var @event in @events)
-				{
-					InvokeFromType(@event.GetType(), @event, unitOfWork);
-					foreach (var i in @event.GetType().GetInterfaces())
+					try
 					{
-						InvokeFromType(i, @event, unitOfWork);
+						foreach (var @event in @events)
+						{
+							InvokeEventHandlers(@event, unitOfWork);
+						}
+
+						transaction.Commit();
+					}
+					catch (Exception ex)
+					{
+						transaction.Rollback();
+						logger.LogError(ex.GetErrorDetails());
+						throw;
 					}
 				}
-
-				transaction.Commit();
-			}
-			catch (Exception ex)
-			{
-				transaction.Rollback();
-				logger.LogError(ex.GetErrorDetails());
-				throw;
 			}
 		}
 
-		private void InvokeEventHandlers<T>(T @event, IUnitOfWork unitOfWork, IUnitOfWorkTransaction transaction) where T : class, IEvent
+		private void InvokeEventHandlers<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
 		{
-			try
+			InvokeFromType(@event.GetType(), @event, unitOfWork);
+			foreach (var i in @event.GetType().GetInterfaces())
 			{
-				InvokeFromType(@event.GetType(), @event, unitOfWork);
-				foreach (var i in @event.GetType().GetInterfaces())
-				{
-					InvokeFromType(i, @event, unitOfWork);
-				}
-
-				transaction.Commit();
-			}
-			catch (Exception ex)
-			{
-				transaction.Rollback();
-				logger.LogError(ex.GetErrorDetails());
-				throw;
+				InvokeFromType(i, @event, unitOfWork);
 			}
 		}
 

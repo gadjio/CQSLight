@@ -11,9 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PGMS.Data", "PGMS.DataServi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{48D14FFF-CE54-41E3-951E-65798DDA213B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PGMS.UnitTests", "PGMS.UnitTests\PGMS.UnitTests.csproj", "{F9359BD7-FA43-41EA-AE0C-B72FFA117733}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PGMS.UnitTests", "PGMS.UnitTests\PGMS.UnitTests.csproj", "{F9359BD7-FA43-41EA-AE0C-B72FFA117733}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PGMS.FakeImpl", "PGMS.FakeImpl\PGMS.FakeImpl.csproj", "{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PGMS.FakeImpl", "PGMS.FakeImpl\PGMS.FakeImpl.csproj", "{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PGMS.IntegratedTests", "PGMS.IntegratedTests\PGMS.IntegratedTests.csproj", "{AF397837-C426-4AAC-ACA6-6FE1A11D78F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF397837-C426-4AAC-ACA6-6FE1A11D78F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF397837-C426-4AAC-ACA6-6FE1A11D78F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF397837-C426-4AAC-ACA6-6FE1A11D78F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF397837-C426-4AAC-ACA6-6FE1A11D78F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F9359BD7-FA43-41EA-AE0C-B72FFA117733} = {48D14FFF-CE54-41E3-951E-65798DDA213B}
 		{C5B7E50E-C28B-46F6-B1A4-39DC6990BB82} = {48D14FFF-CE54-41E3-951E-65798DDA213B}
+		{AF397837-C426-4AAC-ACA6-6FE1A11D78F3} = {48D14FFF-CE54-41E3-951E-65798DDA213B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EF75BBD5-7D4F-41B4-827B-55AD720E2CD5}

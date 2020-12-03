@@ -107,7 +107,7 @@ namespace Sample.BlazorApp
 			var bus = app.ApplicationServices.GetService<IBus>();
 			var dataService = app.ApplicationServices.GetService<IDataService>();
 
-			InitialDataGenerator.InitializeDate(entityRepository, bus, dataService);
+			InitialDataGenerator.InitializeData(entityRepository, bus, dataService);
 		}
 	}
 }

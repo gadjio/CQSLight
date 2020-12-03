@@ -9,7 +9,7 @@ namespace Sample.BlazorApp
 {
 	public static class InitialDataGenerator
 	{
-		public static void InitializeDate(IEntityRepository entityRepository, IBus bus, IDataService dataService)
+		public static void InitializeData(IEntityRepository entityRepository, IBus bus, IDataService dataService)
 		{
 			var region = entityRepository.FindFirst<RegionReporting>(x => x.Name == "Shawinigan");
 			Guid regionId;
@@ -33,7 +33,7 @@ namespace Sample.BlazorApp
 					EntityId = dataService.GenerateId(),
 					Date = DateTime.Today,
 					TemperatureC = rng.Next(-20, 55),
-					Summary = Summaries[rng.Next(Summaries.Length)]
+					Summary = Summaries[rng.Next(Summaries.Length - 1)]
 				});
 			}
 		}

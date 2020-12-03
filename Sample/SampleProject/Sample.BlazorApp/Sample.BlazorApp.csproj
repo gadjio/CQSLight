@@ -12,7 +12,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="PGMS.CQSLight" Version="1.0.2" />
-    <PackageReference Include="PGMS.DataProvider.EFCore" Version="1.0.2" />
+    <PackageReference Include="PGMS.DataProvider.EFCore" Version="1.0.2.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -22,6 +22,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 try
                 {
                     action.Invoke(this);
+                    context.SaveChanges();
 
                     transaction.Commit();
                 }
@@ -30,14 +31,10 @@ namespace PGMS.DataProvider.EFCore.Services
                     transaction.Rollback();
                     throw;
                 }
-                this.Save();
+                
             }
         }
 
-        public void Save()
-        {
-            context.SaveChanges();
-        }
 
         private bool disposed = false;
 

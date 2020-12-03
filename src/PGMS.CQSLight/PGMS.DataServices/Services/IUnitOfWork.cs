@@ -4,8 +4,7 @@ namespace PGMS.Data.Services
 {
     public interface IUnitOfWork : IDisposable
     {
-        void Save();
-        IUnitOfWorkTransaction GetTransaction();
+	    IUnitOfWorkTransaction GetTransaction();
         IDbContext GetDbContext();
     }
 

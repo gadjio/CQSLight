@@ -104,6 +104,9 @@ namespace PGMS.DataProvider.EFCore.Services
         {
             var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
             dbSet.Add(entity);
+
+            var context = GetContext(unitOfWork);
+            context.SaveChanges();
         }
 
         public virtual void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
@@ -116,6 +119,8 @@ namespace PGMS.DataProvider.EFCore.Services
                 dbSet.Attach(entityToDelete);
             }
             dbSet.Remove(entityToDelete);
+
+            context.SaveChanges();
         }
 
 
@@ -135,6 +140,8 @@ namespace PGMS.DataProvider.EFCore.Services
 	            var nestedComplexObject = context.Entry(entityToUpdate).Reference(prop.Name).TargetEntry;
 	            nestedComplexObject.State = EntityState.Modified;
             }
+
+            context.SaveChanges();
         }
     }
 
@@ -230,8 +237,6 @@ namespace PGMS.DataProvider.EFCore.Services
             using (var unitOfWork = GetUnitOfWork())
             {
                 InsertOperation(unitOfWork, entity);
-
-                unitOfWork.Save();
             }
         }
 
@@ -244,8 +249,6 @@ namespace PGMS.DataProvider.EFCore.Services
                 {
                     DeleteOperation(unitOfWork, entity);
                 }
-
-                unitOfWork.Save();
             }
         }
 
@@ -259,8 +262,6 @@ namespace PGMS.DataProvider.EFCore.Services
             using (var unitOfWork = GetUnitOfWork())
             {
                 DeleteOperation(unitOfWork, entityToDelete);
-
-                unitOfWork.Save();
             }
         }
 
@@ -269,8 +270,6 @@ namespace PGMS.DataProvider.EFCore.Services
             using (var unitOfWork = GetUnitOfWork())
             {
                 UpdateOperation(unitOfWork, entityToUpdate);
-
-                unitOfWork.Save();
             }
         }
 
@@ -283,6 +282,8 @@ namespace PGMS.DataProvider.EFCore.Services
                     try
                     {
                         action.Invoke(unitOfWork);
+                        var context = GetContext(unitOfWork);
+                        context.SaveChanges();
 
                         transaction.Commit();
                     }
@@ -291,7 +292,7 @@ namespace PGMS.DataProvider.EFCore.Services
                         transaction.Rollback();
                         throw;
                     }
-                    unitOfWork.Save();
+                    
                 }
 
             }
