@@ -4,7 +4,7 @@ using PGMS.Data.Services;
 
 namespace PGMS.CQSLight.Infra.Querying.Services
 {
-    public interface IQueryProcessor
+	public interface IQueryProcessor
     {
         TResult Process<TResult>(IQuery<TResult> query);
 		TResult ProcessWithCaching<TResult>(IQuery<TResult> query, int cacheDurationInSeconds);
@@ -25,8 +25,23 @@ namespace PGMS.CQSLight.Infra.Querying.Services
 
         public TResult Process<TResult>(IQuery<TResult> query)
         {
-            var handlerType = typeof(IHandleQuery<,>).MakeGenericType(query.GetType(), typeof(TResult));
+	        var asyncHandlerType = typeof(IHandleQueryAsync<,>).MakeGenericType(query.GetType(), typeof(TResult));
+	        dynamic asyncHandler;
+	        if (context.TryResolve(asyncHandlerType, out asyncHandler))
+	        {
+		        var request = asyncHandler.Handle((dynamic)query);
+		        request.Wait();
+		        return request.Result;
+	        }
 
+	        var asyncEnumeratorHandlerType = typeof(IHandleQueryAsyncEnumerable<,>).MakeGenericType(query.GetType(), typeof(TResult));
+	        dynamic asyncEnumHandler;
+	        if (context.TryResolve(asyncEnumeratorHandlerType, out asyncEnumHandler))
+	        {
+		        return asyncEnumHandler.Handle((dynamic)query);
+	        }
+
+			var handlerType = typeof(IHandleQuery<,>).MakeGenericType(query.GetType(), typeof(TResult));
             dynamic handler = context.Resolve(handlerType);
 
             return handler.Handle((dynamic)query);

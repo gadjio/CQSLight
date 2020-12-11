@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />
     <ProjectReference Include="..\PGMS.DataProvider.EFCore\PGMS.DataProvider.EFCore.csproj" />
     <ProjectReference Include="..\PGMS.FakeImpl\PGMS.FakeImpl.csproj" />
   </ItemGroup>

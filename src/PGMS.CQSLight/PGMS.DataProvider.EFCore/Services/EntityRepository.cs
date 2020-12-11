@@ -207,7 +207,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
                 do
                 {
-                    subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
+                    subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset); 
                     offset = offset + fetchSize;
                     result.AddRange(subList);
                 } while (subList.Any());
