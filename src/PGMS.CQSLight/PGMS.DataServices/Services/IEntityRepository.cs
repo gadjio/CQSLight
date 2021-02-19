@@ -37,9 +37,7 @@ namespace PGMS.Data.Services
 
         void ExecuteInTransaction(Action<IUnitOfWork> action);
 
-      
         string GetConnectionString();
-        void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query);
     }
 
 }

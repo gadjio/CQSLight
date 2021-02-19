@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using PGMS.Data.Services;
@@ -19,6 +20,139 @@ namespace PGMS.DataProvider.EFCore.Services
         public T GetContext(IUnitOfWork unitOfWork)
         {
             return ((UnitOfWork<T>)unitOfWork).GetContext();
+        }
+
+        public IQueryable<TEntity> GetQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null)
+           where TEntity : class
+        {
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+            IQueryable<TEntity> query = dbSet;
+
+
+            if (HasLazyLoading(typeof(TEntity)))
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+                {
+                    query = query.Include(property.Name);
+                }
+            }
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+
+
+            return query;
+        }
+
+        public IQueryable<TEntity> JoinQueries<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query,
+            IQueryable<TInner> innerQuery, Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null)
+            where TEntity : class
+            where TInner : class
+        {
+            var queryWithJoin = query.Join(innerQuery, outerKeySelector, innerKeySelector, (e, i) => e);
+
+            return queryWithJoin;
+        }
+
+
+        public IQueryable<TEntity> LeftJoinQueries<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query, IQueryable<TInner> innerQuery,
+            Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null) where TEntity : class where TInner : class
+        {
+            var queryWithJoin = query.GroupJoin(innerQuery, outerKeySelector, innerKeySelector, (e, i) => new { e, i }).SelectMany(temp => temp.i.DefaultIfEmpty(),
+                (temp, p) =>
+                    new
+                    {
+                        e = temp.e,
+                        p = p
+                    }).Where(x => x.p == null).Select(x => x.e).AsQueryable();
+
+            return queryWithJoin;
+        }
+
+        public List<TEntity> FetchAll<TEntity>(IQueryable<TEntity> query, Func<IQueryable<TEntity>, IQueryable<TEntity>> orderBy = null)
+        {
+            if (orderBy != null)
+            {
+                return orderBy(query.Distinct()).ToList();
+            }
+
+            return query.ToList();
+        }
+
+        public List<TEntity> FetchQuery<TEntity>(IQueryable<TEntity> query,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0)
+        {
+            if (orderBy != null)
+            {
+                return orderBy(query.Distinct()).Skip(offset).Take(fetchSize).ToList();
+            }
+
+            return query.Skip(offset).Take(fetchSize).ToList();
+        }
+
+        public IQueryable<TResult<TEntity, TInner>> GetJoinQuery<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query,
+            Expression<Func<TInner, bool>> innerFilter = null, Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null)
+            where TEntity : class
+            where TInner : class
+        {
+            var innerDbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TInner>();
+            IQueryable<TInner> subQuery = innerDbSet;
+            if (innerFilter != null)
+            {
+                subQuery = subQuery.Where(innerFilter);
+            }
+
+            var queryWithJoin = query.Join(subQuery, outerKeySelector, innerKeySelector, (e, i) => new TResult<TEntity, TInner>(e, i));
+
+            return queryWithJoin;
+        }
+
+
+        public IList<TEntity> GetJoinOperation<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
+            Expression<Func<TInner, bool>> innerFilter = null, Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null,
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0)
+            where TEntity : class
+            where TInner : class
+        {
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+            IQueryable<TEntity> query = dbSet;
+
+
+            if (HasLazyLoading(typeof(TEntity)))
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+                {
+                    query = query.Include(property.Name);
+                }
+            }
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            var innerDbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TInner>();
+            IQueryable<TInner> subQuery = innerDbSet;
+            if (innerFilter != null)
+            {
+                subQuery = subQuery.Where(innerFilter);
+            }
+
+            var queryWithJoin = query.Join(subQuery, outerKeySelector, innerKeySelector, (e, i) => e);
+
+
+
+            if (orderBy != null)
+            {
+                return orderBy(queryWithJoin).Skip(offset).Take(fetchSize).ToList();
+            }
+
+            return queryWithJoin.Skip(offset).Take(fetchSize).ToList();
         }
 
         public IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
@@ -157,8 +291,32 @@ namespace PGMS.DataProvider.EFCore.Services
 
             context.SaveChanges();
         }
+
+        public void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query)
+        {
+	        RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(GetContext(unitOfWork).Database, query);
+        }
+
+        public int ExecuteSqlCommand(IUnitOfWork unitOfWork, string query, SqlParameter[] parameters)
+        {
+	        var context = GetContext(unitOfWork);
+	        return context.Database.ExecuteSqlRaw(query, parameters);
+        }
+
     }
 
+
+    public class TResult<TEntity, TInner>
+    {
+	    public TEntity E { get; }
+	    public TInner I { get; }
+
+	    public TResult(TEntity e, TInner i)
+	    {
+		    E = e;
+		    I = i;
+	    }
+    }
 
     public class BaseEntityRepository<T> : BaseOperationEntityRepository<T>, IEntityRepository where T : BaseDbContext
     {
@@ -318,11 +476,6 @@ namespace PGMS.DataProvider.EFCore.Services
                 }
 
             }
-        }
-
-        public void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query)
-        {            
-             RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(GetContext(unitOfWork).Database, query);            
         }
 
     }
