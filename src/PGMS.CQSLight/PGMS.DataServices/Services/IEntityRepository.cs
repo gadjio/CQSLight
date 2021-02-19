@@ -28,6 +28,8 @@ namespace PGMS.Data.Services
 
         int Count<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class;
 
+        Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class;
+
         void Insert<TEntity>(TEntity entity) where TEntity : class;
         //void Delete<TEntity>(Expression<Func<TEntity, bool>> filter) where TEntity : class;
         //void Delete<TEntity>(TEntity entityToDelete) where TEntity : class;

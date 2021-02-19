@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Contexts;
 
@@ -98,6 +99,19 @@ namespace PGMS.DataProvider.EFCore.Services
 
             return query.Count();
 
+        }
+
+        public Dictionary<TKey, int> CountOperation<TEntity, TKey>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class
+        {
+	        var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+	        IQueryable<TEntity> query = dbSet;
+
+	        if (filter != null)
+	        {
+		        query = query.Where(filter);
+	        }
+
+	        return query.GroupBy(groupBy).Select(g => new { key = g.Key, count = g.Count() }).ToDictionary(k => k.key, i => i.count); ;
         }
 
         public virtual void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
@@ -232,6 +246,14 @@ namespace PGMS.DataProvider.EFCore.Services
             }
         }
 
+        public Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class
+        {
+	        using (var unitOfWork = GetUnitOfWork())
+	        {
+		        return CountOperation(unitOfWork, filter, groupBy);
+	        }
+        }
+
         public virtual void Insert<TEntity>(TEntity entity) where TEntity : class
         {
             using (var unitOfWork = GetUnitOfWork())
@@ -300,7 +322,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query)
         {            
-             RelationalDatabaseFacadeExtensions.ExecuteSqlCommand(GetContext(unitOfWork).Database, query);            
+             RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(GetContext(unitOfWork).Database, query);            
         }
 
     }

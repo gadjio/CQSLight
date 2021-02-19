@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="PGMS.CQSLight" Version="1.0.2" />
+    <PackageReference Include="PGMS.CQSLight" Version="1.0.2.2" />
   </ItemGroup>
 
   <ItemGroup>
