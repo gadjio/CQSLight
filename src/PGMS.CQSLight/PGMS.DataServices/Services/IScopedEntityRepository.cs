@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
@@ -30,6 +31,7 @@ namespace PGMS.Data.Services
 
 		void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query);
 		int ExecuteSqlCommand(IUnitOfWork unitOfWork, string query, SqlParameter[] parameters);
+		List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map);
 
 		//QueryBuilder
 		IQueryable<TEntity> GetQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null)

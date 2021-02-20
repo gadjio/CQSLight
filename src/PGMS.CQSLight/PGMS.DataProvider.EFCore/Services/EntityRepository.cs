@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
@@ -304,6 +306,31 @@ namespace PGMS.DataProvider.EFCore.Services
 	        return context.Database.ExecuteSqlRaw(query, parameters);
         }
 
+
+        public List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map)
+        {
+	        var context = GetContext(unitOfWork);
+            using (var command = context.Database.GetDbConnection().CreateCommand())
+		    {
+			    command.CommandText = query;
+			    command.CommandType = CommandType.Text;
+
+			    context.Database.OpenConnection();
+
+			    using (var result = command.ExecuteReader())
+			    {
+				    var entities = new List<T>();
+
+				    while (result.Read())
+				    {
+					    entities.Add(map(result));
+				    }
+
+				    return entities;
+			    }
+		    }
+	        
+        }
     }
 
 
