@@ -92,8 +92,4 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
     }
-   
-    
-  
-    
 }

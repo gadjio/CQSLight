@@ -20,8 +20,11 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixt
 		[SetUp]
 		public void SetUp()
 		{
-
-			entityRepository = new BaseEntityRepository<BaseDbContext>(new ConnectionStringProvider(connectionString), new IntegratedTestContextFactory());
+			entityRepository = new BaseEntityRepository<TestContext>(new ConnectionStringProvider(connectionString), new IntegratedTestContextFactory());
+			using (var unitOfWork = entityRepository.GetUnitOfWork())
+			{
+				((TestContext) unitOfWork.GetDbContext()).Database.EnsureCreated();
+			}
 
 			var existing = entityRepository.FindAll<DbSequenceHiLo>();
 

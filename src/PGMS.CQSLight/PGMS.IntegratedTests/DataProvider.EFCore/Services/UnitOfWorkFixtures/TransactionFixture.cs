@@ -19,7 +19,7 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.UnitOfWorkFixtures
 		[SetUp]
 		public void SetUp()
 		{
-			entityRepository = new BaseEntityRepository<BaseDbContext>(new ConnectionStringProvider(connectionString), new IntegratedTestContextFactory());
+			entityRepository = new BaseEntityRepository<TestContext>(new ConnectionStringProvider(connectionString), new IntegratedTestContextFactory());
 		}
 
 		[Test]
@@ -184,29 +184,5 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.UnitOfWorkFixtures
 		}
 	}
 
-	public class IntegratedTestContextFactory : ContextFactory<BaseDbContext>
-	{
-		private bool reUseContext = false;
-		private BaseDbContext context = null;
-
-		public override BaseDbContext CreateContext(DbContextOptions<BaseDbContext> options)
-		{
-			if (reUseContext == false)
-			{
-				return new BaseDbContext(options);
-			}
-
-			if (context != null)
-			{
-				return context;
-			}
-			context = new BaseDbContext(options);
-			return context;
-		}
-
-		public void InitContextUsage(bool reUseContext)
-		{
-			this.reUseContext = reUseContext;
-		}
-	}
+	
 }

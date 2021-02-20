@@ -48,7 +48,8 @@ namespace PGMS.DataProvider.EFCore.Services
             return query;
         }
 
-        public IQueryable<TEntity> JoinQueries<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query,
+
+        public IQueryable<TEntity> JoinQueries<TEntity, TInner, TKey>(IQueryable<TEntity> query,
             IQueryable<TInner> innerQuery, Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null)
             where TEntity : class
             where TInner : class
@@ -59,7 +60,7 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
 
-        public IQueryable<TEntity> LeftJoinQueries<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query, IQueryable<TInner> innerQuery,
+        public IQueryable<TEntity> LeftJoinQueries<TEntity, TInner, TKey>(IQueryable<TEntity> query, IQueryable<TInner> innerQuery,
             Expression<Func<TEntity, TKey>> outerKeySelector = null, Expression<Func<TInner, TKey>> innerKeySelector = null) where TEntity : class where TInner : class
         {
             var queryWithJoin = query.GroupJoin(innerQuery, outerKeySelector, innerKeySelector, (e, i) => new { e, i }).SelectMany(temp => temp.i.DefaultIfEmpty(),
@@ -306,17 +307,7 @@ namespace PGMS.DataProvider.EFCore.Services
     }
 
 
-    public class TResult<TEntity, TInner>
-    {
-	    public TEntity E { get; }
-	    public TInner I { get; }
-
-	    public TResult(TEntity e, TInner i)
-	    {
-		    E = e;
-		    I = i;
-	    }
-    }
+   
 
     public class BaseEntityRepository<T> : BaseOperationEntityRepository<T>, IEntityRepository where T : BaseDbContext
     {
