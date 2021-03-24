@@ -35,21 +35,6 @@ namespace PGMS.DataProvider.EFCore.Services
             }
         }
 
-
-        private bool disposed = false;
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!this.disposed)
-            {
-                //if (disposing)
-                //{
-                //    context.Dispose();
-                //}
-            }
-            this.disposed = true;
-        }
-
         public DbSet<TEntity> GetDbSet<TEntity>() where TEntity : class
         {
             return context.Set<TEntity>();
@@ -62,8 +47,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            context.Dispose();
         }
 
         public IUnitOfWorkTransaction GetTransaction()

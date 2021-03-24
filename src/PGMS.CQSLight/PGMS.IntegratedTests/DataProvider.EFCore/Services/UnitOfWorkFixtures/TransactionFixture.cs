@@ -156,6 +156,7 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.UnitOfWorkFixtures
 			Assert.That(result.intval, Is.EqualTo(1));
 		}
 
+
 		[Test]
 		public void CheckTransactionDeletedItemPersisted()
 		{
