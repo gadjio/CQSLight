@@ -6,6 +6,9 @@ namespace PGMS.Data.Services
     {
 	    IUnitOfWorkTransaction GetTransaction();
         IDbContext GetDbContext();
+
+        bool IsAutoFlush();
+        void Save();
     }
 
     public interface IUnitOfWorkTransaction : IDisposable

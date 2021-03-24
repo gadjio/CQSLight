@@ -253,36 +253,33 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public virtual void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
         {
-            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
-            dbSet.Add(entity);
-
-            var context = GetContext(unitOfWork);
-            context.SaveChanges();
+	        var context = GetContext(unitOfWork);
+            context.Add(entity);
+            if (unitOfWork.IsAutoFlush())
+            {
+	            context.SaveChanges();
+            }
+            
         }
 
         public virtual void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
         {
-            var dbSet = GetDbSet<TEntity>(unitOfWork);
-            var context = GetContext(unitOfWork);
+	        var context = GetContext(unitOfWork);
+	        context.Remove(entityToDelete);
 
-            if (context.Entry(entityToDelete).State == EntityState.Detached)
-            {
-                dbSet.Attach(entityToDelete);
-            }
-            dbSet.Remove(entityToDelete);
-
-            context.SaveChanges();
+	        if (unitOfWork.IsAutoFlush())
+	        {
+		        context.SaveChanges();
+	        }
         }
 
 
 
         public virtual void UpdateOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToUpdate) where TEntity : class
         {
-            var dbSet = GetDbSet<TEntity>(unitOfWork);
-            var context = GetContext(unitOfWork);
+	        var context = GetContext(unitOfWork);
 
-            //dbSet.Update(entityToUpdate);
-            dbSet.Attach(entityToUpdate);
+            context.Attach(entityToUpdate);
             context.Entry(entityToUpdate).State = EntityState.Modified;
 
             var props = entityToUpdate.GetType().GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(IsComplexTypeAttribute)));
@@ -292,7 +289,10 @@ namespace PGMS.DataProvider.EFCore.Services
 	            nestedComplexObject.State = EntityState.Modified;
             }
 
-            context.SaveChanges();
+            if (unitOfWork.IsAutoFlush())
+            {
+	            context.SaveChanges();
+            }
         }
 
         public void ExecuteSqlCommand(IUnitOfWork unitOfWork, string query)
@@ -348,9 +348,9 @@ namespace PGMS.DataProvider.EFCore.Services
             this.factory = factory;            
         }
 
-        public IUnitOfWork GetUnitOfWork()
+        public IUnitOfWork GetUnitOfWork(bool autoFlush = true)
         {
-            return UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory);
+            return UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
         }
 
         public string GetConnectionString()
@@ -480,8 +480,7 @@ namespace PGMS.DataProvider.EFCore.Services
                     try
                     {
                         action.Invoke(unitOfWork);
-                        var context = GetContext(unitOfWork);
-                        context.SaveChanges();
+                        unitOfWork.Save();
 
                         transaction.Commit();
                     }

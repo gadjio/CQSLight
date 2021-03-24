@@ -8,11 +8,13 @@ namespace PGMS.DataProvider.EFCore.Services
 {
     public class UnitOfWork<T> : IUnitOfWork where T : BaseDbContext
     {
+	    private readonly bool autoFlush;
         private T context;
 
-        public UnitOfWork(string connectionString, ContextFactory<T> factory)
+        public UnitOfWork(string connectionString, ContextFactory<T> factory, bool autoFlush)
         {
-            context = factory.Create(connectionString);
+	        this.autoFlush = autoFlush;
+	        context = factory.Create(connectionString);
         }
 
         public void ExecuteInTransaction(Action<IUnitOfWork> action)
@@ -58,6 +60,16 @@ namespace PGMS.DataProvider.EFCore.Services
         public IDbContext GetDbContext()
         {
             return context;
+        }
+
+        public bool IsAutoFlush()
+        {
+	        return autoFlush;
+        }
+
+        public void Save()
+        {
+	        context.SaveChanges();
         }
     }
 

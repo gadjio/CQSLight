@@ -42,13 +42,14 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
 
-			using (var unitOfWork = entityRepository.GetUnitOfWork())
+			using (var unitOfWork = entityRepository.GetUnitOfWork(false))
 			{
 				using (var transaction = unitOfWork.GetTransaction())
 				{
 					try
 					{
 						InvokeEventHandlers(@event, unitOfWork);
+						unitOfWork.Save();
 
 						transaction.Commit();
 					}
@@ -118,6 +119,8 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 				logger.LogDebug(service.GetType().FullName);
 				MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
 				methodInfo.Invoke(service, new object[] { @event, unitOfWork });
+
+				unitOfWork.Save();
 			}
 		}
 	}

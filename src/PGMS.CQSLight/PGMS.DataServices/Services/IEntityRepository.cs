@@ -7,7 +7,7 @@ namespace PGMS.Data.Services
 {
 	public interface IUnitOfWorkProvider
 	{
-		IUnitOfWork GetUnitOfWork();
+		IUnitOfWork GetUnitOfWork(bool autoFlush = true);
 	}
 
 	public interface IEntityRepository :  IScopedEntityRepository, IUnitOfWorkProvider
