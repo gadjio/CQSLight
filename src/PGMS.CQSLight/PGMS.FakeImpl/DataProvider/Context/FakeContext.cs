@@ -13,27 +13,10 @@ namespace PGMS.FakeImpl.DataProvider.Context
 
 	public class FakeContextFactory : ContextFactory<FakeContext>
 	{
-		private bool reUseContext = true;
-		private FakeContext context = null;
-
 		public override FakeContext CreateContext(DbContextOptions<FakeContext> options)
 		{
-			if (reUseContext == false)
-			{
-				return new FakeContext(options);
-			}
-
-			if (context != null)
-			{
-				return context;
-			}
-			context = new FakeContext(options);
-			return context;
+			return new FakeContext(options);
 		}
 
-		public void InitContextUsage(bool reUseContext)
-		{
-			this.reUseContext = reUseContext;
-		}
 	}
 }

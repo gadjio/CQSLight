@@ -13,7 +13,6 @@ namespace PGMS.UnitTests.DataProvider.Installers
 		public void Test()
 		{
 			var contextFactory = new FakeContextFactory();
-			contextFactory.InitContextUsage(false);
 
 			var connectionString = "Fake";
 
