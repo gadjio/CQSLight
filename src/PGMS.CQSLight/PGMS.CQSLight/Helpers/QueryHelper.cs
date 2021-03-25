@@ -1,4 +1,5 @@
-﻿using PGMS.CQSLight.Infra.Querying;
+﻿using System.Threading.Tasks;
+using PGMS.CQSLight.Infra.Querying;
 using PGMS.CQSLight.Infra.Querying.Services;
 
 namespace PGMS.CQSLight.Helpers
@@ -17,5 +18,9 @@ namespace PGMS.CQSLight.Helpers
 			return queryProcessor.Process(query);
 		}
 
+		public async Task<T> ProcessAsync<T>(IQuery<T> query)
+		{
+			return await queryProcessor.ProcessAsync(query);
+		}
 	}
 }
