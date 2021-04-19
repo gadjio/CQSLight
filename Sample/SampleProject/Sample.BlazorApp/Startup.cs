@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.AspNetCore.Builder;
@@ -19,6 +21,9 @@ using PGMS.CQSLight.Helpers;
 using PGMS.CQSLight.Infra.Commands.Services;
 using PGMS.Data.Services;
 using Sample.BlazorApp.Installers;
+using Sample.BlazorApp.Services;
+using Sample.UpdateData.Installers;
+using Serilog;
 
 
 namespace Sample.BlazorApp
@@ -45,6 +50,10 @@ namespace Sample.BlazorApp
 			services.AddSingleton<QueryHelper>();
 
 			services.AddHttpContextAccessor();
+
+			services.AddHostedService<MigratorHostedService>();
+
+			services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
 		}
 
 		// ConfigureContainer is where you can register things directly
@@ -61,6 +70,10 @@ namespace Sample.BlazorApp
 			DataLayerInstaller.ConfigureServices(builder, connection);
 			ServiceLayerInstaller.ConfigureServices(builder);
 			BlazorAppInstaller.ConfigureServices(builder, connection, appSettings);
+
+			UpdateDataServiceInstaller.ConfigureServices(builder);
+
+			SetupLogger(appSettings);
 		}
 
 
@@ -98,16 +111,25 @@ namespace Sample.BlazorApp
 				endpoints.MapFallbackToPage("/_Host");
 			});
 
-			var appSettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
+		}
 
-			var context = app.ApplicationServices.GetService<SampleContext>();
-			context.Database.Migrate();
 
-			var entityRepository = app.ApplicationServices.GetService<IEntityRepository>();
-			var bus = app.ApplicationServices.GetService<IBus>();
-			var dataService = app.ApplicationServices.GetService<IDataService>();
+		private void SetupLogger(AppSettings appSettings)
+		{
+			
+			Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
 
-			InitialDataGenerator.InitializeData(entityRepository, bus, dataService);
+			var loggerSetting = new LoggerConfiguration()
+				.MinimumLevel.Error() // Can use config
+				.WriteTo.File(Path.Combine("/logs/", "log-{Date}.txt"), rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+				.WriteTo.Console();
+
+			var version = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
+			
+
+			Log.Logger = loggerSetting.CreateLogger();
+
+			Log.Logger.Warning($"Le web app version {version} a démaré.");
 		}
 	}
 }

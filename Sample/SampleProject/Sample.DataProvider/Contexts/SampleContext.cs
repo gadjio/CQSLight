@@ -15,7 +15,7 @@ namespace Sample.DataProvider.Contexts
 		public DbSet<ActivityLog> ActivityLogs { get; set; }
 		public DbSet<DomainEventReporting> DomainEventReporting { get; set; }
 		public DbSet<DomainEventProviderReporting> DomainEventProviderReporting { get; set; }
-
+		public DbSet<UpdateServiceLookup> UpdateServiceLookup { get; set; }
 
 		public DbSet<RegionReporting> Regions { get; set; }
 		public DbSet<WeatherInfoReporting> WeatherInfos { get; set; }
