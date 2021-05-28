@@ -16,7 +16,7 @@ namespace PGMS.CQSLight.Installers
 				.AsImplementedInterfaces();
 		}
 
-		public static void ConfigureServices(ContainerBuilder builder, bool useAutoFlush = false)
+		public static void ConfigureServices(ContainerBuilder builder, bool useAutoFlush = true)
 		{
 			var config = new DirectBusConfigurationProvider(useAutoFlush);
 			builder.Register(c => config).As<IDirectBusConfigurationProvider>().SingleInstance();
