@@ -4,7 +4,9 @@ using PGMS.CQSLight.Extensions;
 
 namespace PGMS.CQSLight.Infra.Commands
 {
-    public interface IEvent : IMessage
+
+
+    public interface IEvent : IDomainMessage
     {
 	    Guid AggregateId { get; set; }
         Guid Id { get; }
