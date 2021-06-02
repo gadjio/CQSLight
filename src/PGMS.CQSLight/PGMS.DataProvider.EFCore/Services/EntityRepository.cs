@@ -274,6 +274,21 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
 
+        public virtual void DeleteManyOperation<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entitiesToDelete) where TEntity : class
+        {
+	        var context = GetContext(unitOfWork);
+
+	        foreach (var entity in entitiesToDelete)
+	        {
+		        context.Remove(entity);
+	        }
+
+	        if (unitOfWork.IsAutoFlush())
+	        {
+		        context.SaveChanges();
+	        }
+        }
+
 
         public virtual void UpdateOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToUpdate) where TEntity : class
         {

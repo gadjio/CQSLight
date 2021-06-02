@@ -15,14 +15,21 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 		void Send(ICommand command);
 	}
 
+	public interface IDirectBusConfigurationProvider
+	{
+		bool UseAutoFlush { get; }
+	}
+
 	public class DirectBus : IBus
 	{
 		private readonly IComponentContext context;
+		private readonly IDirectBusConfigurationProvider directBusConfigurationProvider;
 		private readonly ILogger<IBus> logger;
 
-		public DirectBus(IComponentContext context, ILogger<IBus> logger)
+		public DirectBus(IComponentContext context, IDirectBusConfigurationProvider directBusConfigurationProvider, ILogger<IBus> logger)
 		{
 			this.context = context;
+			this.directBusConfigurationProvider = directBusConfigurationProvider;
 			this.logger = logger;
 		}
 
@@ -42,7 +49,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
 
-			using (var unitOfWork = entityRepository.GetUnitOfWork(false))
+			using (var unitOfWork = entityRepository.GetUnitOfWork(directBusConfigurationProvider.UseAutoFlush))
 			{
 				using (var transaction = unitOfWork.GetTransaction())
 				{
@@ -136,4 +143,6 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			return (IEnumerable<object>)result;
 		}
 	}
+
+	
 }
