@@ -25,6 +25,7 @@ namespace PGMS.Data.Services
 
 		void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class;
 		void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class;
+		void DeleteManyOperation<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entitiesToDelete) where TEntity : class;
 		void UpdateOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToUpdate) where TEntity : class;
 
 		int CountOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null) where TEntity : class;
