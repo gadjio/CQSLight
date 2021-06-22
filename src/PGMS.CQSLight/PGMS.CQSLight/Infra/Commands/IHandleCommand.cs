@@ -105,8 +105,15 @@ namespace PGMS.CQSLight.Infra.Commands
 
 		    foreach (var @event in events)
 		    {
-			    @event.ByUser = command.ByUsername;
-			    @event.AggregateId = command.AggregateRootId;
+			    if (string.IsNullOrEmpty(@event.ByUser))
+			    {
+				    @event.ByUser = command.ByUsername;
+			    }
+
+			    if (@event.AggregateId == Guid.Empty)
+			    {
+				    @event.AggregateId = command.AggregateRootId;
+			    }
             }
 		    
 		    bus.Publish(@events);
