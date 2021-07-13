@@ -11,10 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DataProvider.EFCore\Services\EntityRepositoryFixtures\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />
     <ProjectReference Include="..\PGMS.DataProvider.EFCore\PGMS.DataProvider.EFCore.csproj" />
   </ItemGroup>

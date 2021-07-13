@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -31,13 +32,25 @@ namespace PGMS.DataProvider.EFCore.Services
             IQueryable<TEntity> query = dbSet;
 
 
-            if (HasLazyLoading(typeof(TEntity)))
+            if (HasLazyLoading(typeof(TEntity)) || IsLazyLoading(typeof(TEntity)))
             {
-                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
-                foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
-                {
-                    query = query.Include(property.Name);
-                }
+	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+	            {
+		            query = query.Include(property.Name);
+	            }
+            }
+            else
+            {
+	            var lazyLoadingProperties = GetLazyLoadingProperties(typeof(TEntity));
+	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+	            {
+		            if (lazyLoadingProperties.Contains(property.PropertyInfo))
+		            {
+			            query = query.Include(property.Name);
+		            }
+	            }
             }
 
             if (filter != null)
@@ -125,13 +138,25 @@ namespace PGMS.DataProvider.EFCore.Services
             IQueryable<TEntity> query = dbSet;
 
 
-            if (HasLazyLoading(typeof(TEntity)))
+            if (HasLazyLoading(typeof(TEntity)) || IsLazyLoading(typeof(TEntity)))
             {
-                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
-                foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
-                {
-                    query = query.Include(property.Name);
-                }
+	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+	            {
+		            query = query.Include(property.Name);
+	            }
+            }
+            else
+            {
+	            var lazyLoadingProperties = GetLazyLoadingProperties(typeof(TEntity));
+	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+	            {
+		            if (lazyLoadingProperties.Contains(property.PropertyInfo))
+		            {
+			            query = query.Include(property.Name);
+		            }
+	            }
             }
 
             if (filter != null)
@@ -165,7 +190,7 @@ namespace PGMS.DataProvider.EFCore.Services
 	        IQueryable<TEntity> query = dbSet;
 
 
-	        if (HasLazyLoading(typeof(TEntity)))
+	        if (HasLazyLoading(typeof(TEntity)) || IsLazyLoading(typeof(TEntity)))
 	        {
 		        var context = ((UnitOfWork<T>) unitOfWork).GetContext();
 		        foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
@@ -173,6 +198,18 @@ namespace PGMS.DataProvider.EFCore.Services
 			        query = query.Include(property.Name);
 		        }
 	        }
+	        else
+	        {
+		        var lazyLoadingProperties = GetLazyLoadingProperties(typeof(TEntity));
+		        var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+		        foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+		        {
+			        if (lazyLoadingProperties.Contains(property.PropertyInfo))
+			        {
+				        query = query.Include(property.Name);
+			        }
+		        }
+            }
 
 	        if (filter != null)
             {
@@ -187,6 +224,29 @@ namespace PGMS.DataProvider.EFCore.Services
             return query.Skip(offset).Take(fetchSize).ToList();
         }
 
+        private List<PropertyInfo> GetLazyLoadingProperties(Type type)
+        {
+	        var result = new List<PropertyInfo>();
+
+	        foreach (var property in type.GetProperties())
+	        {
+		        var hasIsLazyLoading = Attribute.IsDefined(property, typeof(LazyLoadAttribute));
+		        if (hasIsLazyLoading)
+		        {
+			        result.Add(property);
+                    continue;
+		        }
+
+		        if (Attribute.GetCustomAttributes(property).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute"))
+		        {
+			        result.Add(property);
+			        continue;
+                }
+	        }
+
+	        return result;
+        }
+
         private bool HasLazyLoading(Type type)
         {
 	        foreach (var property in type.GetProperties())
@@ -196,9 +256,15 @@ namespace PGMS.DataProvider.EFCore.Services
 		        {
 			        return true;
 		        }
-            }
+	        }
 
 	        return false;
+        }
+
+        private bool IsLazyLoading(Type type)
+        {
+	        return Attribute.IsDefined(type, typeof(LazyLoadAttribute)) ||
+	               Attribute.GetCustomAttributes(type).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute");
         }
 
         public TEntity FindFirstOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null) where TEntity : class
@@ -206,12 +272,24 @@ namespace PGMS.DataProvider.EFCore.Services
             var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
             IQueryable<TEntity> query = dbSet;
 
-            if (HasLazyLoading(typeof(TEntity)))
+            if (HasLazyLoading(typeof(TEntity)) || IsLazyLoading(typeof(TEntity)))
             {
 	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
 	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
 	            {
 		            query = query.Include(property.Name);
+	            }
+            }
+            else
+            {
+	            var lazyLoadingProperties = GetLazyLoadingProperties(typeof(TEntity));
+	            var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+	            foreach (var property in context.Model.FindEntityType(typeof(TEntity)).GetNavigations())
+	            {
+		            if (lazyLoadingProperties.Contains(property.PropertyInfo))
+		            {
+			            query = query.Include(property.Name);
+		            }
 	            }
             }
 
