@@ -12,8 +12,6 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixt
 		private IEntityRepository entityRepository;
 		private string connectionString = "Server=localhost;Database=SampleProject;Trusted_Connection=True;ConnectRetryCount=0";
 
-		private long unixTimeStampMs;
-
 		[SetUp]
 		public void SetUp()
 		{
