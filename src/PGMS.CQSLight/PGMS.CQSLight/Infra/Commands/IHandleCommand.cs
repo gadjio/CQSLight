@@ -34,13 +34,13 @@ namespace PGMS.CQSLight.Infra.Commands
             command.Validate(out commandValidationResult);
             if (commandValidationResult != null && commandValidationResult.Any())
             {
-                throw new DomainValidationException(GetErrorMessage(commandValidationResult));
+                throw new DomainValidationException(GetErrorMessage(commandValidationResult), commandValidationResult);
             }
 
-            var validationResults = ValidateCommand(command);
+            var validationResults = ValidateCommand(command).ToList();
             if (validationResults != null && validationResults.Any())
             {
-                throw new DomainValidationException(GetErrorMessage(validationResults.ToList()));
+                throw new DomainValidationException(GetErrorMessage(validationResults.ToList()), validationResults);
             }
 
             var @event = PublishEvent(command);
@@ -92,13 +92,13 @@ namespace PGMS.CQSLight.Infra.Commands
 		    command.Validate(out commandValidationResult);
 		    if (commandValidationResult != null && commandValidationResult.Any())
 		    {
-			    throw new DomainValidationException(GetErrorMessage(commandValidationResult));
+			    throw new DomainValidationException(GetErrorMessage(commandValidationResult), commandValidationResult);
 		    }
 
-		    var validationResults = ValidateCommand(command);
+		    var validationResults = ValidateCommand(command).ToList();
 		    if (validationResults != null && validationResults.Any())
 		    {
-			    throw new DomainValidationException(GetErrorMessage(validationResults.ToList()));
+			    throw new DomainValidationException(GetErrorMessage(validationResults.ToList()), validationResults);
 		    }
 
 		    var @events = PublishEvents(command);
