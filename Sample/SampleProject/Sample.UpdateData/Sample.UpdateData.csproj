@@ -11,9 +11,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="PGMS.CQSLight" Version="2.0.0" />
-    <PackageReference Include="PGMS.Data" Version="2.0.0" />
-    <PackageReference Include="PGMS.DataProvider.EFCore" Version="2.0.0" />
+    <PackageReference Include="PGMS.CQSLight" Version="2.0.1.7-alpha" />
+    <PackageReference Include="PGMS.Data" Version="2.0.1.7-alpha" />
+    <PackageReference Include="PGMS.DataProvider.EFCore" Version="2.0.1.7-alpha" />
   </ItemGroup>
 
   <ItemGroup>

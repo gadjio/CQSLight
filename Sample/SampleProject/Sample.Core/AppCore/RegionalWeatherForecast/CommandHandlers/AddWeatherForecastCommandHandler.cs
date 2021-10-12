@@ -15,7 +15,7 @@ namespace Sample.Core.AppCore.RegionalWeatherForecast.CommandHandlers
 
 		public override IEnumerable<ValidationResult> ValidateCommand(AddWeatherForecastCommand command)
 		{
-			return null;
+			return new List<ValidationResult>();
 		}
 
 		public override IEvent PublishEvent(AddWeatherForecastCommand command)

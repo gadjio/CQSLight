@@ -3,7 +3,12 @@ using PGMS.Data.Services;
 
 namespace PGMS.DataProvider.EFCore.Contexts
 {
-	public class BaseDbContext : DbContext, IDbContext
+	public interface IBaseDbContext : IDbContext
+	{
+		DbSet<DbSequenceHiLo> sequenceHiLo { get; set; }
+	}
+
+	public class BaseDbContext : DbContext, IBaseDbContext
 	{
 		public BaseDbContext(DbContextOptions options)
 			: base(options)

@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PGMS.Data.Services;
 
 namespace PGMS.DataProvider.EFCore.Services
 {
-    public abstract class ContextFactory<T> where T : DbContext
+    public abstract class ContextFactory<T> where T : DbContext, IDbContext
     {
 	   
         public virtual T Create(string connectionString)

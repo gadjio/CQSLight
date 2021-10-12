@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Autofac;
+using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Installers;
 using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Contexts;
@@ -21,7 +22,7 @@ namespace PGMS.DataProvider.EFCore.Installers
 
 
         public static void RegisterContext<TDbContext>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory, string appName = "Default", string schema = null) 
-	        where TDbContext : BaseDbContext
+	        where TDbContext : DbContext, IBaseDbContext
         {
 	        var entityRepository = new BaseEntityRepository<TDbContext>(new ConnectionStringProvider(connectionString), contextFactory);
 	        builder.Register(c => entityRepository).As<IUnitOfWorkProvider>().SingleInstance();
@@ -34,7 +35,7 @@ namespace PGMS.DataProvider.EFCore.Installers
         }
 
         public static void RegisterContext<TDbContext, TDataService>(ContainerBuilder builder, string connectionString, ContextFactory<TDbContext> contextFactory, string appName = "Default", string schema = null) 
-	        where TDbContext : BaseDbContext
+	        where TDbContext : DbContext, IBaseDbContext
             where TDataService : IDataService
         {
 	        var entityRepository = new BaseEntityRepository<TDbContext>(new ConnectionStringProvider(connectionString), contextFactory);

@@ -6,7 +6,7 @@ using PGMS.DataProvider.EFCore.Contexts;
 
 namespace PGMS.DataProvider.EFCore.Services
 {
-    public class UnitOfWork<T> : IUnitOfWork where T : BaseDbContext
+    public class UnitOfWork<T> : IUnitOfWork where T : DbContext, IDbContext
     {
 	    private readonly bool autoFlush;
         private T context;

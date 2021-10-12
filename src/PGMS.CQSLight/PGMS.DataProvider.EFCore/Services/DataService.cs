@@ -7,7 +7,7 @@ using PGMS.DataProvider.EFCore.Contexts;
 namespace PGMS.DataProvider.EFCore.Services
 {  
 
-    public class DataService<TDbContext> : IDataService where TDbContext : BaseDbContext
+    public class DataService<TDbContext> : IDataService where TDbContext : DbContext, IBaseDbContext
     {
         private static readonly object ConcurrencyLock = new object();
         private readonly int maxLo = 1000;        

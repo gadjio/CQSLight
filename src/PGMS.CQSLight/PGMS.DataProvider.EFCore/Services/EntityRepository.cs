@@ -13,7 +13,7 @@ using PGMS.DataProvider.EFCore.Contexts;
 
 namespace PGMS.DataProvider.EFCore.Services
 {
-    public class BaseOperationEntityRepository<T> where T : BaseDbContext
+    public class BaseOperationEntityRepository<T> where T : DbContext, IDbContext
     {
         protected static DbSet<TEntity> GetDbSet<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
         {
@@ -429,7 +429,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
    
 
-    public class BaseEntityRepository<T> : BaseOperationEntityRepository<T>, IEntityRepository where T : BaseDbContext
+    public class BaseEntityRepository<T> : BaseOperationEntityRepository<T>, IEntityRepository where T : DbContext, IDbContext
     {
         protected string ConnectionsString { get; set; }
         private readonly ContextFactory<T> factory;
