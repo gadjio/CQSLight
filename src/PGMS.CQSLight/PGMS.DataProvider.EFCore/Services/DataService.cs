@@ -61,7 +61,7 @@ namespace PGMS.DataProvider.EFCore.Services
 			        var tablename = string.IsNullOrEmpty(schema) ? "SequenceHiLo" : $"[{schema}].SequenceHiLo";
 			        entityRepository.ExecuteSqlCommand(entityRepository.GetUnitOfWork(), $"INSERT INTO {tablename}([id_parametres], [intval]) values ('{ParameterName}', 9)");
                 }
-		        catch (Exception e)
+		        catch (Exception)
 		        {
 			        //Database may not be initialized - Do nothing, will be initialized next time
 		        }

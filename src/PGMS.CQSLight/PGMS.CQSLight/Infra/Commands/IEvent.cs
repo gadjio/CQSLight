@@ -15,12 +15,7 @@ namespace PGMS.CQSLight.Infra.Commands
 
     public interface IDomainEvent : IEvent
     {
-        
-        
-        Guid Id { get; }
-        string ByUser { get; set; }
-
-        long Timestamp { get; set; }
+	    long Timestamp { get; set; }
 
 	    string GetJSonSerialisation();
     }
