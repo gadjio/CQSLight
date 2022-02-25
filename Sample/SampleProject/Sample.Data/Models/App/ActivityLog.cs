@@ -21,6 +21,4 @@ namespace Sample.Data.Models.App
 
 		public string UserSessionUniqueId { get; set; }
     }
-
-	
 }
