@@ -400,7 +400,7 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
 
-        public List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map)
+        public List<TQueryResult> RawSqlQuery<TQueryResult>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, TQueryResult> map)
         {
 	        var context = GetContext(unitOfWork);
             using (var command = context.Database.GetDbConnection().CreateCommand())
@@ -412,7 +412,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
 			    using (var result = command.ExecuteReader())
 			    {
-				    var entities = new List<T>();
+				    var entities = new List<TQueryResult>();
 
 				    while (result.Read())
 				    {

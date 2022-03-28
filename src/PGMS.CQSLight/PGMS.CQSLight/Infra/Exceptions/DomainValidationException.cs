@@ -12,7 +12,7 @@ namespace PGMS.CQSLight.Infra.Exceptions
 
 	    public DomainValidationException(string message) : base(message) { }
 
-        public DomainValidationException(string? message, List<ValidationResult> validationResult) : base(message)
+        public DomainValidationException(string message, List<ValidationResult> validationResult) : base(message)
         {
 	        ValidationResult = validationResult;
         }

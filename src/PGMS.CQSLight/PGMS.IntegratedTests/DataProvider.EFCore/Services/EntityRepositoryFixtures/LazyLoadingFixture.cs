@@ -10,7 +10,7 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixt
 	public class LazyLoadingFixture
 	{
 		private IEntityRepository entityRepository;
-		private string connectionString = "Server=localhost;Database=SampleProject;Trusted_Connection=True;ConnectRetryCount=0";
+		private string connectionString = "Server=localhost;Database=PGMSTestDb;Trusted_Connection=True;ConnectRetryCount=0;TrustServerCertificate=True";
 
 		[SetUp]
 		public void SetUp()

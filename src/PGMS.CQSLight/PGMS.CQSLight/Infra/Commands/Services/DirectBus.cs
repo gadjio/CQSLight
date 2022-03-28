@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
 using PGMS.CQSLight.Extensions;
@@ -12,7 +13,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 	{
 		void Publish<T>(T @event) where T : class, IEvent;
 		void Publish<T>(IEnumerable<T> events) where T : class, IEvent;
-		void Send(ICommand command);
+		Task Send(ICommand command);
 	}
 
 	public interface IDirectBusConfigurationProvider
@@ -35,7 +36,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 		
 
-		public void Send(ICommand command)
+		public Task Send(ICommand command)
 		{
 			var type = typeof(IHandleCommand<>);
 			var genericType = type.MakeGenericType(command.GetType());
@@ -43,6 +44,8 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 			MethodInfo methodInfo = genericType.GetMethod("Execute");
 			methodInfo.Invoke(service, new object[] { command });
+
+			return Task.CompletedTask;
 		}
 
 		public void Publish<T>(T @event) where T : class, IEvent

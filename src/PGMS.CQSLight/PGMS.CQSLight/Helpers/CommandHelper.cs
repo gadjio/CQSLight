@@ -18,7 +18,7 @@ namespace PGMS.CQSLight.Helpers
 		{
 			command.ByUsername = username;
 			
-			bus.Send(command);
+			await bus.Send(command);
 		}
 
 		public async Task Send(List<ICommand> commands, string username)
@@ -26,7 +26,7 @@ namespace PGMS.CQSLight.Helpers
 			foreach (var command in commands)
 			{
 				command.ByUsername = username;
-				bus.Send(command);
+				await bus.Send(command);
 			}
 		}
 	}
