@@ -499,6 +499,16 @@ namespace PGMS.DataProvider.EFCore.Services
             }
         }
 
+        public List<TEntity> FindTop<TEntity>( Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+            int fetchSize = 200,
+            int offset = 0) where TEntity : class
+        {
+            using (var unitOfWork = GetUnitOfWork())
+            {
+                return GetOperation(unitOfWork, filter, orderBy, fetchSize, offset).ToList();
+            }
+        }
+
         public TEntity FindFirst<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
             using (var unitOfWork = GetUnitOfWork())

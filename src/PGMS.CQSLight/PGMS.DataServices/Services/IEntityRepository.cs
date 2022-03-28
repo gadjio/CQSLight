@@ -38,6 +38,10 @@ namespace PGMS.Data.Services
         void ExecuteInTransaction(Action<IUnitOfWork> action);
 
         string GetConnectionString();
+
+        List<TEntity> FindTop<TEntity>( Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+            int fetchSize = 200,
+            int offset = 0) where TEntity : class;
     }
 
 }
