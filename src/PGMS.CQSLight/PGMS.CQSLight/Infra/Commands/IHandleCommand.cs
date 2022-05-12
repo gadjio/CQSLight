@@ -37,7 +37,7 @@ namespace PGMS.CQSLight.Infra.Commands
                 throw new DomainValidationException(GetErrorMessage(commandValidationResult), commandValidationResult);
             }
 
-            var validationResults = ValidateCommand(command).ToList();
+            var validationResults = ValidateCommand(command)?.ToList();
             if (validationResults != null && validationResults.Any())
             {
                 throw new DomainValidationException(GetErrorMessage(validationResults.ToList()), validationResults);
