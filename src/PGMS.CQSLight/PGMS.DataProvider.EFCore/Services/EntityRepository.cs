@@ -217,6 +217,7 @@ namespace PGMS.DataProvider.EFCore.Services
             return query.Skip(offset).Take(fetchSize).ToList();
         }
 
+
         public async Task<List<TEntity>> GetOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
         {
@@ -229,6 +230,22 @@ namespace PGMS.DataProvider.EFCore.Services
 
 
             return await query.Skip(offset).Take(fetchSize).ToListAsync();
+        }
+
+        public async Task<List<TEntity>> GetDistinctOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
+	        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
+        {
+	        var query = GetOperationQuery(unitOfWork, filter);
+
+            query = query.Distinct().AsQueryable();
+
+            if (orderBy != null)
+	        {
+		        return await orderBy(query).Skip(offset).Take(fetchSize).ToListAsync();
+	        }
+
+
+	        return await query.Skip(offset).Take(fetchSize).ToListAsync();
         }
 
         private IQueryable<TEntity> GetOperationQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter) where TEntity : class
@@ -382,6 +399,20 @@ namespace PGMS.DataProvider.EFCore.Services
             }
 
             return await query.CountAsync();
+
+        }
+
+        public async Task<int> CountDistinctOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null) where TEntity : class
+        {
+	        var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+	        IQueryable<TEntity> query = dbSet;
+
+	        if (filter != null)
+	        {
+		        query = query.Where(filter);
+	        }
+
+	        return await query.Distinct().CountAsync();
 
         }
 
@@ -721,6 +752,8 @@ namespace PGMS.DataProvider.EFCore.Services
             }
         }
 
+
+
         public List<TEntity> FindTop<TEntity>( Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
             int fetchSize = 200,
             int offset = 0) where TEntity : class
@@ -739,6 +772,16 @@ namespace PGMS.DataProvider.EFCore.Services
             {
                 return await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
             }
+        }
+
+        public async Task<List<TEntity>> FindTopDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+	        int fetchSize = 200,
+	        int offset = 0) where TEntity : class
+        {
+	        using (var unitOfWork = GetUnitOfWork())
+	        {
+		        return await GetDistinctOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
+	        }
         }
 
         public TEntity FindFirst<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
@@ -771,7 +814,13 @@ namespace PGMS.DataProvider.EFCore.Services
                 return await CountOperationAsync(unitOfWork, filter);
             }
         }
-
+        public async Task<int> CountDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
+        {
+	        using (var unitOfWork = GetUnitOfWork())
+	        {
+		        return await CountDistinctOperationAsync(unitOfWork, filter);
+	        }
+        }
 
         public Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class
         {
