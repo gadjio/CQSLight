@@ -1,5 +1,9 @@
 # CQSLight
 
+[![Package Version](https://img.shields.io/nuget/v/PGMS.CQSLight.svg)](https://www.nuget.org/packages/PGMS.CQSLight)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/PGMS.CQSLight.svg)](https://www.nuget.org/packages/PGMS.CQSLight)
+[![License](https://img.shields.io/github/license/gadjio/CQSLight.svg)](https://github.com/gadjio/CQSLight/blob/master/LICENSE)
+
 Version 3 is currently in alpha
 
 Version 3.X => DotNet 6.0
