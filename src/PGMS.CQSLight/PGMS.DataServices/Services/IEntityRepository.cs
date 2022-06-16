@@ -39,6 +39,7 @@ namespace PGMS.Data.Services
 
         int Count<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class;
         Task<int> CountAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class;
+        Task<int> CountDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class;
 
         Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class;
         Task<Dictionary<TKey, int>> CountAsync<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class;
@@ -67,6 +68,10 @@ namespace PGMS.Data.Services
         Task<List<TEntity>> FindTopAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
             int fetchSize = 200,
             int offset = 0) where TEntity : class;
+
+        Task<List<TEntity>> FindTopDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+	        int fetchSize = 200,
+	        int offset = 0) where TEntity : class;
     }
 
 }

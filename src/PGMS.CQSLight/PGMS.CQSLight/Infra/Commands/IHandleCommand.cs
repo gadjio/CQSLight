@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using PGMS.CQSLight.Infra.Commands.Services;
 using PGMS.CQSLight.Infra.Exceptions;
 using PGMS.CQSLight.Extensions;
@@ -11,8 +12,8 @@ namespace PGMS.CQSLight.Infra.Commands
 {
     public interface IHandleCommand<T> where T : ICommand
     {
-        void Execute(T command);
-        void OnFail(T command);
+        Task Execute(T command);
+        Task OnFail(T command);
     }
 
     public abstract class BaseCommandHandler<T> : IHandleCommand<T> where T : BaseCommand
@@ -28,10 +29,9 @@ namespace PGMS.CQSLight.Infra.Commands
 
         public abstract IEvent PublishEvent(T command);
 
-        public void Execute(T command)
+        public async Task Execute(T command)
         {
-            List<ValidationResult> commandValidationResult;
-            command.Validate(out commandValidationResult);
+	        command.Validate(out var commandValidationResult);
             if (commandValidationResult != null && commandValidationResult.Any())
             {
                 throw new DomainValidationException(GetErrorMessage(commandValidationResult), commandValidationResult);
@@ -47,7 +47,8 @@ namespace PGMS.CQSLight.Infra.Commands
             @event.ByUser = command.ByUsername;
             @event.AggregateId = command.AggregateRootId;
 
-            bus.Publish(@event);
+            await bus.Publish(@event);
+
         }
 
         private static string GetErrorMessage(IEnumerable<ValidationResult> commandValidationResult)
@@ -67,9 +68,9 @@ namespace PGMS.CQSLight.Infra.Commands
             return sb.ToString();
         }
 
-        public void OnFail(T command)
+        public Task OnFail(T command)
         {
-
+	        return Task.CompletedTask;
         }
     }
 
@@ -86,10 +87,9 @@ namespace PGMS.CQSLight.Infra.Commands
 
 	    public abstract List<IEvent> PublishEvents(T command);
 
-	    public void Execute(T command)
+	    public async Task Execute(T command)
 	    {
-		    List<ValidationResult> commandValidationResult;
-		    command.Validate(out commandValidationResult);
+		    command.Validate(out var commandValidationResult);
 		    if (commandValidationResult != null && commandValidationResult.Any())
 		    {
 			    throw new DomainValidationException(GetErrorMessage(commandValidationResult), commandValidationResult);
@@ -116,7 +116,7 @@ namespace PGMS.CQSLight.Infra.Commands
 			    }
             }
 		    
-		    bus.Publish(@events);
+		    await bus.Publish(@events);
 	    }
 
 	    private static string GetErrorMessage(IEnumerable<ValidationResult> commandValidationResult)
@@ -136,9 +136,9 @@ namespace PGMS.CQSLight.Infra.Commands
 		    return sb.ToString();
 	    }
 
-	    public void OnFail(T command)
+	    public Task OnFail(T command)
 	    {
-
+		    return Task.CompletedTask;
 	    }
     }
 

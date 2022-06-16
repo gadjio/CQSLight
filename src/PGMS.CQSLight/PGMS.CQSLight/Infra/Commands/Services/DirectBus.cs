@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,12 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 {
 	public interface IBus
 	{
-		void Publish<T>(T @event) where T : class, IEvent;
-		void Publish<T>(IEnumerable<T> events) where T : class, IEvent;
+		Task Publish<T>(T @event) where T : class, IEvent;
+		//Task PublishAsync<T>(T @event) where T : class, IEvent;
+
+		Task Publish<T>(IEnumerable<T> events) where T : class, IEvent;
+		//Task PublishAsync<T>(IEnumerable<T> events) where T : class, IEvent;
+
 		Task Send(ICommand command);
 	}
 
@@ -36,36 +41,62 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 		
 
-		public Task Send(ICommand command)
+		public async Task Send(ICommand command)
 		{
 			var type = typeof(IHandleCommand<>);
 			var genericType = type.MakeGenericType(command.GetType());
 			var service = context.Resolve(genericType);
 
 			MethodInfo methodInfo = genericType.GetMethod("Execute");
-			methodInfo.Invoke(service, new object[] { command });
-
-			return Task.CompletedTask;
+			await (Task)methodInfo.Invoke(service, new object[] { command });
 		}
 
-		public void Publish<T>(T @event) where T : class, IEvent
+
+		//public void Publish<T>(T @event) where T : class, IEvent
+		//{
+		//	var entityRepository = context.Resolve<IUnitOfWorkProvider>();
+
+		//	using (var unitOfWork = entityRepository.GetUnitOfWork(directBusConfigurationProvider.UseAutoFlush))
+		//	{
+		//		using (var transaction = unitOfWork.GetTransaction())
+		//		{
+		//			try
+		//			{
+		//				InvokeEventHandlers(@event, unitOfWork);
+		//				unitOfWork.Save();
+
+		//				transaction.Commit();
+		//			}
+		//			catch (Exception ex)
+		//			{
+		//				transaction.Rollback();
+		//				logger.LogError(ex.GetErrorDetails());
+		//				throw;
+		//			}
+
+		//		}
+		//	}
+
+		//}
+
+		public async Task Publish<T>(T @event) where T : class, IEvent
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
 
 			using (var unitOfWork = entityRepository.GetUnitOfWork(directBusConfigurationProvider.UseAutoFlush))
 			{
-				using (var transaction = unitOfWork.GetTransaction())
+				using (var transaction = await unitOfWork.GetTransactionAsync())
 				{
 					try
 					{
-						InvokeEventHandlers(@event, unitOfWork);
-						unitOfWork.Save();
+						await InvokeEventHandlersAsync(@event, unitOfWork);
+						await unitOfWork.SaveAsync();
 
-						transaction.Commit();
+						await transaction.CommitAsync();
 					}
 					catch (Exception ex)
 					{
-						transaction.Rollback();
+						await transaction.RollbackAsync();
 						logger.LogError(ex.GetErrorDetails());
 						throw;
 					}
@@ -75,26 +106,53 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 		}
 
-		public void Publish<T>(IEnumerable<T> events) where T : class, IEvent
+		//public void Publish<T>(IEnumerable<T> events) where T : class, IEvent
+		//{
+		//	var entityRepository = context.Resolve<IUnitOfWorkProvider>();
+
+		//	using (var unitOfWork = entityRepository.GetUnitOfWork())
+		//	{
+		//		using (var transaction = unitOfWork.GetTransaction())
+		//		{
+		//			try
+		//			{
+		//				foreach (var @event in @events)
+		//				{
+		//					InvokeEventHandlers(@event, unitOfWork);
+		//				}
+
+		//				transaction.Commit();
+		//			}
+		//			catch (Exception ex)
+		//			{
+		//				transaction.Rollback();
+		//				logger.LogError(ex.GetErrorDetails());
+		//				throw;
+		//			}
+		//		}
+		//	}
+		//}
+
+		public async Task Publish<T>(IEnumerable<T> events) where T : class, IEvent
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
 
 			using (var unitOfWork = entityRepository.GetUnitOfWork())
 			{
-				using (var transaction = unitOfWork.GetTransaction())
+				using (var transaction = await unitOfWork.GetTransactionAsync())
 				{
 					try
 					{
 						foreach (var @event in @events)
 						{
-							InvokeEventHandlers(@event, unitOfWork);
+							await InvokeEventHandlersAsync(@event, unitOfWork);
 						}
 
-						transaction.Commit();
+						await transaction.CommitAsync();
 					}
 					catch (Exception ex)
 					{
-						transaction.Rollback();
+						await transaction.RollbackAsync();
 						logger.LogError(ex.GetErrorDetails());
 						throw;
 					}
@@ -102,25 +160,61 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			}
 		}
 
-		private void InvokeEventHandlers<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
+		//private void InvokeEventHandlers<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
+		//{
+		//	InvokeFromType(@event.GetType(), @event, unitOfWork);
+		//	foreach (var i in @event.GetType().GetInterfaces())
+		//	{
+		//		InvokeFromType(i, @event, unitOfWork);
+		//	}
+		//}
+
+		private async Task InvokeEventHandlersAsync<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
 		{
-			InvokeFromType(@event.GetType(), @event, unitOfWork);
+			await InvokeFromTypeAsync(@event.GetType(), @event, unitOfWork);
 			foreach (var i in @event.GetType().GetInterfaces())
 			{
-				InvokeFromType(i, @event, unitOfWork);
+				await InvokeFromTypeAsync(i, @event, unitOfWork);
 			}
 		}
 
-		private void InvokeFromType<T>(Type t, T @event, IUnitOfWork unitOfWork)
+		//private void InvokeFromType<T>(Type t, T @event, IUnitOfWork unitOfWork)
+		//{
+		//	if (typeof(IEvent).IsAssignableFrom((Type) t))
+		//	{
+		//		InvokeHandler(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork);
+		//		InvokeFromType(t.GetTypeInfo().BaseType, @event, unitOfWork);
+		//	}
+		//}
+
+		private async Task InvokeFromTypeAsync<T>(Type t, T @event, IUnitOfWork unitOfWork)
 		{
-			if (typeof(IEvent).IsAssignableFrom((Type) t))
+			if (typeof(IEvent).IsAssignableFrom((Type)t))
 			{
-				InvokeHandler(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork);
-				InvokeFromType(t.GetTypeInfo().BaseType, @event, unitOfWork);
+				await InvokeHandlerAsync(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork);
+				await InvokeFromTypeAsync(t.GetTypeInfo().BaseType, @event, unitOfWork);
 			}
 		}
 
-		private void InvokeHandler<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
+		//private void InvokeHandler<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
+		//{
+		//	logger.LogDebug("TG: " + makeGenericType.FullName);
+		//	var resolveAll = context.ResolveAll(makeGenericType);
+		//	foreach (var service in resolveAll)
+		//	{
+		//		logger.LogDebug(service.GetType().FullName);
+		//		MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
+		//		var result = (Task)methodInfo.Invoke(service, new object[] { @event, unitOfWork });
+		//		if (result != null)
+		//		{
+		//			result.Wait();
+		//		}
+
+		//		unitOfWork.Save();
+		//	}
+		//}
+
+		private async Task InvokeHandlerAsync<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
 		{
 			logger.LogDebug("TG: " + makeGenericType.FullName);
 			var resolveAll = context.ResolveAll(makeGenericType);
@@ -128,9 +222,9 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			{
 				logger.LogDebug(service.GetType().FullName);
 				MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
-				methodInfo.Invoke(service, new object[] { @event, unitOfWork });
+				await (Task)methodInfo.Invoke(service, new object[] { @event, unitOfWork });
 
-				unitOfWork.Save();
+				await unitOfWork.SaveAsync();
 			}
 		}
 	}
