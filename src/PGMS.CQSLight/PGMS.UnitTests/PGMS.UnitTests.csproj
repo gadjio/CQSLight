@@ -15,4 +15,8 @@
     <ProjectReference Include="..\PGMS.FakeImpl\PGMS.FakeImpl.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CQSLight\Infra\Commands\" />
+  </ItemGroup>
+
 </Project>

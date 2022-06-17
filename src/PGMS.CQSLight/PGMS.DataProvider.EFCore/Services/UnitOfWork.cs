@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using PGMS.Data.Services;
-using PGMS.DataProvider.EFCore.Contexts;
 
 namespace PGMS.DataProvider.EFCore.Services
 {
@@ -52,10 +52,20 @@ namespace PGMS.DataProvider.EFCore.Services
             context.Dispose();
         }
 
+        public async ValueTask DisposeAsync()
+        {
+	        await context.DisposeAsync();
+        }
+
         public IUnitOfWorkTransaction GetTransaction()
         {
             return new DbTransaction(context.Database.BeginTransaction());
-        }       
+        }
+
+        public async Task<IUnitOfWorkTransaction> GetTransactionAsync()
+        {
+	        return new DbTransaction(await context.Database.BeginTransactionAsync());
+        }
 
         public IDbContext GetDbContext()
         {
@@ -70,6 +80,11 @@ namespace PGMS.DataProvider.EFCore.Services
         public void Save()
         {
 	        context.SaveChanges();
+        }
+
+        public async Task SaveAsync()
+        {
+	        await context.SaveChangesAsync();
         }
     }
 
@@ -88,15 +103,30 @@ namespace PGMS.DataProvider.EFCore.Services
             transaction.Commit();
         }
 
+        public async Task CommitAsync()
+        {
+	        await transaction.CommitAsync();
+        }
+
 
         public void Rollback()
         {
             transaction.Rollback();
         }
 
+        public async Task RollbackAsync()
+        {
+	        await transaction.RollbackAsync();
+        }
+
         public void Dispose()
         {
             transaction.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+	        await transaction.DisposeAsync();
         }
     }
 }
