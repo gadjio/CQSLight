@@ -116,7 +116,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 return orderBy(query.Distinct()).Skip(offset).Take(fetchSize).ToList();
             }
 
-            return query.Skip(offset).Take(fetchSize).ToList();
+            return query.Distinct().Skip(offset).Take(fetchSize).ToList();
         }
 
         public async Task<List<TEntity>> FetchQueryAsync<TEntity>(IQueryable<TEntity> query,
@@ -127,7 +127,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 return await orderBy(query.Distinct()).Skip(offset).Take(fetchSize).ToListAsync();
             }
 
-            return await query.Skip(offset).Take(fetchSize).ToListAsync();
+            return await query.Distinct().Skip(offset).Take(fetchSize).ToListAsync();
         }
 
         public IQueryable<TResult<TEntity, TInner>> GetJoinQuery<TEntity, TInner, TKey>(IUnitOfWork unitOfWork, IQueryable<TEntity> query,
@@ -203,7 +203,34 @@ namespace PGMS.DataProvider.EFCore.Services
             return queryWithJoin.Skip(offset).Take(fetchSize).ToList();
         }
 
-        public IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
+        public List<TEntity> FindAllOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, 
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
+        {
+            var query = GetOperationQuery(unitOfWork, filter);
+
+            if (orderBy != null)
+            {
+                return orderBy(query).ToList();
+            }
+
+            return query.ToList();
+		}
+
+        public async Task<List<TEntity>> FindAllAsyncOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
+        {
+            var query = GetOperationQuery(unitOfWork, filter);
+
+            if (orderBy != null)
+            {
+                return await orderBy(query).ToListAsync();
+            }
+
+            return await query.ToListAsync();
+		}
+
+
+		public IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
         {
             var query = GetOperationQuery(unitOfWork, filter);
