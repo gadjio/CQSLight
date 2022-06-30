@@ -26,3 +26,4 @@ Have a look at our sample app based on PGMS.CQSLight
 
 # What's new
 Version 3.1 -> async function for entityrepository, bus, EventHandlers, CommandHandlers and QueryHandlers
+Version 3.1.0.5 -> EntityRepository - FindAllOperation (return all entries - not fetchsize / offset)
