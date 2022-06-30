@@ -216,7 +216,7 @@ namespace PGMS.DataProvider.EFCore.Services
             return query.ToList();
 		}
 
-        public async Task<List<TEntity>> FindAllAsyncOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
+        public async Task<List<TEntity>> FindAllOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
         {
             var query = GetOperationQuery(unitOfWork, filter);
