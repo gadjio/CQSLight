@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>3.1.0.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
+    <Description>Unitests utilities for PGMS.CQSLight
+- Fake impementations of Transaction, UnitOfWork
+- In Memory EntityRepository</Description>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />
+    <ProjectReference Include="..\PGMS.DataServices\PGMS.Data.csproj" />
+  </ItemGroup>
+
+</Project>
