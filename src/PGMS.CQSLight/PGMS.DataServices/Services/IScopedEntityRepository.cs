@@ -57,8 +57,8 @@ namespace PGMS.Data.Services
 		int ExecuteSqlCommand(IUnitOfWork unitOfWork, string query, SqlParameter[] parameters);
         Task<int> ExecuteSqlCommandAsync(IUnitOfWork unitOfWork, string query, SqlParameter[] parameters);
 
-		List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map);
-        Task<List<T>> RawSqlQueryAsync<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map);
+		List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map, int timeoutInSec = 60);
+        Task<List<T>> RawSqlQueryAsync<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map, int timeoutInSec = 60);
 
 		//QueryBuilder
 		IQueryable<TEntity> GetQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null)

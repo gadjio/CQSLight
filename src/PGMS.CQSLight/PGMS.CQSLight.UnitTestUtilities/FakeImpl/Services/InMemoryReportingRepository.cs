@@ -331,12 +331,12 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
             throw new NotImplementedException("ExecuteSqlCommandAsync is not implemented in InMemoryReportingRepository");
 		}
 
-		public List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map)
+		public List<T> RawSqlQuery<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map, int timeoutInSec = 60)
 		{
             throw new NotImplementedException("RawSqlQuery is not implemented in InMemoryReportingRepository");
 		}
 
-		public Task<List<T>> RawSqlQueryAsync<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map)
+		public Task<List<T>> RawSqlQueryAsync<T>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, T> map, int timeoutInSec = 60)
 		{
             throw new NotImplementedException("RawSqlQueryAsync is not implemented in InMemoryReportingRepository");
 		}

@@ -607,13 +607,15 @@ namespace PGMS.DataProvider.EFCore.Services
             return await context.Database.ExecuteSqlRawAsync(query, parameters);
         }
 
-        public List<TQueryResult> RawSqlQuery<TQueryResult>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, TQueryResult> map)
+        public List<TQueryResult> RawSqlQuery<TQueryResult>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, TQueryResult> map, int timeoutInSec = 60)
         {
 	        var context = GetContext(unitOfWork);
             using (var command = context.Database.GetDbConnection().CreateCommand())
 		    {
 			    command.CommandText = query;
 			    command.CommandType = CommandType.Text;
+
+                command.CommandTimeout = timeoutInSec;
 
 			    context.Database.OpenConnection();
 
@@ -632,7 +634,7 @@ namespace PGMS.DataProvider.EFCore.Services
 	        
         }
 
-        public async Task<List<TQueryResult>> RawSqlQueryAsync<TQueryResult>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, TQueryResult> map)
+        public async Task<List<TQueryResult>> RawSqlQueryAsync<TQueryResult>(IUnitOfWork unitOfWork, string query, Func<DbDataReader, TQueryResult> map, int timeoutInSec = 60)
         {
             var context = GetContext(unitOfWork);
             using (var command = context.Database.GetDbConnection().CreateCommand())
@@ -640,7 +642,9 @@ namespace PGMS.DataProvider.EFCore.Services
                 command.CommandText = query;
                 command.CommandType = CommandType.Text;
 
-                await context.Database.OpenConnectionAsync();
+                command.CommandTimeout = timeoutInSec;
+
+				await context.Database.OpenConnectionAsync();
 
                 using (var result = await command.ExecuteReaderAsync())
                 {
