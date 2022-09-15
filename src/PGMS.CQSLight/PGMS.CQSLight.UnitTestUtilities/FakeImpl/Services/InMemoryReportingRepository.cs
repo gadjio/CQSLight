@@ -5,7 +5,12 @@ using PGMS.Data.Services;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 {
-	public class InMemoryReportingRepository : IEntityRepository
+	public class InMemoryReportingRepository : InMemoryEntityRepository
+	{
+
+	}
+
+	public class InMemoryEntityRepository : IEntityRepository
 	{
 		private IDictionary<Type, IList<object>> inMemoryMap = new Dictionary<Type, IList<object>>();
 

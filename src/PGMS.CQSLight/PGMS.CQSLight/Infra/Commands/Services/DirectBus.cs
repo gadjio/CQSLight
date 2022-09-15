@@ -13,11 +13,9 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 	public interface IBus
 	{
 		Task Publish<T>(T @event) where T : class, IEvent;
-		//Task PublishAsync<T>(T @event) where T : class, IEvent;
-
+		
 		Task Publish<T>(IEnumerable<T> events) where T : class, IEvent;
-		//Task PublishAsync<T>(IEnumerable<T> events) where T : class, IEvent;
-
+		
 		Task Send(ICommand command);
 	}
 
@@ -52,33 +50,6 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 		}
 
 
-		//public void Publish<T>(T @event) where T : class, IEvent
-		//{
-		//	var entityRepository = context.Resolve<IUnitOfWorkProvider>();
-
-		//	using (var unitOfWork = entityRepository.GetUnitOfWork(directBusConfigurationProvider.UseAutoFlush))
-		//	{
-		//		using (var transaction = unitOfWork.GetTransaction())
-		//		{
-		//			try
-		//			{
-		//				InvokeEventHandlers(@event, unitOfWork);
-		//				unitOfWork.Save();
-
-		//				transaction.Commit();
-		//			}
-		//			catch (Exception ex)
-		//			{
-		//				transaction.Rollback();
-		//				logger.LogError(ex.GetErrorDetails());
-		//				throw;
-		//			}
-
-		//		}
-		//	}
-
-		//}
-
 		public async Task Publish<T>(T @event) where T : class, IEvent
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
@@ -89,7 +60,10 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 				{
 					try
 					{
-						await InvokeEventHandlersAsync(@event, unitOfWork);
+						await InvokeEventHandlersAsync(@event, unitOfWork, EventHandlerProcessingPriority.Standard);
+						await unitOfWork.SaveAsync();
+						
+						await InvokeEventHandlersAsync(@event, unitOfWork, EventHandlerProcessingPriority.RunLast);
 						await unitOfWork.SaveAsync();
 
 						await transaction.CommitAsync();
@@ -106,32 +80,6 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 
 		}
 
-		//public void Publish<T>(IEnumerable<T> events) where T : class, IEvent
-		//{
-		//	var entityRepository = context.Resolve<IUnitOfWorkProvider>();
-
-		//	using (var unitOfWork = entityRepository.GetUnitOfWork())
-		//	{
-		//		using (var transaction = unitOfWork.GetTransaction())
-		//		{
-		//			try
-		//			{
-		//				foreach (var @event in @events)
-		//				{
-		//					InvokeEventHandlers(@event, unitOfWork);
-		//				}
-
-		//				transaction.Commit();
-		//			}
-		//			catch (Exception ex)
-		//			{
-		//				transaction.Rollback();
-		//				logger.LogError(ex.GetErrorDetails());
-		//				throw;
-		//			}
-		//		}
-		//	}
-		//}
 
 		public async Task Publish<T>(IEnumerable<T> events) where T : class, IEvent
 		{
@@ -145,7 +93,9 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 					{
 						foreach (var @event in @events)
 						{
-							await InvokeEventHandlersAsync(@event, unitOfWork);
+							await InvokeEventHandlersAsync(@event, unitOfWork, EventHandlerProcessingPriority.Standard);
+							await unitOfWork.SaveAsync();
+							await InvokeEventHandlersAsync(@event, unitOfWork, EventHandlerProcessingPriority.RunLast);
 						}
 
 						await transaction.CommitAsync();
@@ -160,72 +110,53 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			}
 		}
 
-		//private void InvokeEventHandlers<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
-		//{
-		//	InvokeFromType(@event.GetType(), @event, unitOfWork);
-		//	foreach (var i in @event.GetType().GetInterfaces())
-		//	{
-		//		InvokeFromType(i, @event, unitOfWork);
-		//	}
-		//}
+		
 
-		private async Task InvokeEventHandlersAsync<T>(T @event, IUnitOfWork unitOfWork) where T : class, IEvent
+		private async Task InvokeEventHandlersAsync<T>(T @event, IUnitOfWork unitOfWork, EventHandlerProcessingPriority priority) where T : class, IEvent
 		{
-			await InvokeFromTypeAsync(@event.GetType(), @event, unitOfWork);
+			await InvokeFromTypeAsync(@event.GetType(), @event, unitOfWork, priority);
 			foreach (var i in @event.GetType().GetInterfaces())
 			{
-				await InvokeFromTypeAsync(i, @event, unitOfWork);
+				await InvokeFromTypeAsync(i, @event, unitOfWork, priority);
 			}
 		}
 
-		//private void InvokeFromType<T>(Type t, T @event, IUnitOfWork unitOfWork)
-		//{
-		//	if (typeof(IEvent).IsAssignableFrom((Type) t))
-		//	{
-		//		InvokeHandler(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork);
-		//		InvokeFromType(t.GetTypeInfo().BaseType, @event, unitOfWork);
-		//	}
-		//}
-
-		private async Task InvokeFromTypeAsync<T>(Type t, T @event, IUnitOfWork unitOfWork)
+		
+		private async Task InvokeFromTypeAsync<T>(Type t, T @event, IUnitOfWork unitOfWork, EventHandlerProcessingPriority priority)
 		{
 			if (typeof(IEvent).IsAssignableFrom((Type)t))
 			{
-				await InvokeHandlerAsync(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork);
-				await InvokeFromTypeAsync(t.GetTypeInfo().BaseType, @event, unitOfWork);
+				await InvokeHandlerAsync(typeof(IHandleEvent<>).MakeGenericType(new[] { t }), @event, unitOfWork, priority);
+				await InvokeFromTypeAsync(t.GetTypeInfo().BaseType, @event, unitOfWork, priority);
 			}
 		}
 
-		//private void InvokeHandler<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
-		//{
-		//	logger.LogDebug("TG: " + makeGenericType.FullName);
-		//	var resolveAll = context.ResolveAll(makeGenericType);
-		//	foreach (var service in resolveAll)
-		//	{
-		//		logger.LogDebug(service.GetType().FullName);
-		//		MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
-		//		var result = (Task)methodInfo.Invoke(service, new object[] { @event, unitOfWork });
-		//		if (result != null)
-		//		{
-		//			result.Wait();
-		//		}
-
-		//		unitOfWork.Save();
-		//	}
-		//}
-
-		private async Task InvokeHandlerAsync<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork)
+		private async Task InvokeHandlerAsync<T>(Type makeGenericType, T @event, IUnitOfWork unitOfWork, EventHandlerProcessingPriority priority)
 		{
 			logger.LogDebug("TG: " + makeGenericType.FullName);
 			var resolveAll = context.ResolveAll(makeGenericType);
 			foreach (var service in resolveAll)
 			{
+				if (!ValidateHandlerPriority(priority, service.GetType()))
+				{
+					continue;
+				}
+
 				logger.LogDebug(service.GetType().FullName);
 				MethodInfo methodInfo = makeGenericType.GetMethod("Handle");
 				await (Task)methodInfo.Invoke(service, new object[] { @event, unitOfWork });
 
 				await unitOfWork.SaveAsync();
 			}
+		}
+
+		private bool ValidateHandlerPriority(EventHandlerProcessingPriority currentPriority, Type handlerType)
+		{
+			var priorityAttribute = handlerType.GetCustomAttribute<EventHandlerPriorityAttribute>();
+
+			var typeAttribute = priorityAttribute?.Priority ?? EventHandlerProcessingPriority.Standard;
+
+			return typeAttribute == currentPriority;
 		}
 	}
 
@@ -240,6 +171,7 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			return (IEnumerable<object>)result;
 		}
 	}
+
 
 	
 }
