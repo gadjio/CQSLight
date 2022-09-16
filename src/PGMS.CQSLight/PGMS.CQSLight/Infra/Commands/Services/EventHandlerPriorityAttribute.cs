@@ -2,6 +2,7 @@
 
 namespace PGMS.CQSLight.Infra.Commands.Services;
 
+[AttributeUsage(AttributeTargets.Class)]
 public class EventHandlerPriorityAttribute : Attribute
 {
 	public EventHandlerProcessingPriority Priority { get; }

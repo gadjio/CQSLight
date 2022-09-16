@@ -183,6 +183,35 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.UnitOfWorkFixtures
 			var result = entityRepository.FindFirst<DbSequenceHiLo>(x => x.id_parametres == idParametres);
 			Assert.That(result, Is.Null);
 		}
+
+		[Test]
+		public void ValidateValueInAndOutTransaction()
+		{
+			var id = DateTime.Now.ToEpoch();
+			var idParametres = $"IntegratedTest-TransactionRead-{id}";
+
+			entityRepository.Insert(new DbSequenceHiLo
+			{
+				id_parametres = idParametres,
+				intval = 101
+			});
+
+			using var unitOfWork = entityRepository.GetUnitOfWork(true);
+			using var transaction = unitOfWork.GetTransaction();
+
+			var entity = entityRepository.FindFirstOperation<DbSequenceHiLo>(unitOfWork, x => x.id_parametres == idParametres);
+			entity.intval = 1001;
+			entityRepository.UpdateOperation(unitOfWork, entity);
+
+			//Act
+			var readCommited = entityRepository.FindFirst<DbSequenceHiLo>(x => x.id_parametres == idParametres);
+			var readUncommited = entityRepository.FindFirstOperation<DbSequenceHiLo>(unitOfWork, x => x.id_parametres == idParametres);
+
+			//Assert
+			Assert.That(readCommited.intval, Is.EqualTo(101));
+			Assert.That(readUncommited.intval, Is.EqualTo(1001));
+
+		}
 	}
 
 	
