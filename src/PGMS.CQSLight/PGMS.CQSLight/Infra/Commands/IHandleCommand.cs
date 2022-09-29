@@ -44,7 +44,8 @@ namespace PGMS.CQSLight.Infra.Commands
             }
 
             var @event = PublishEvent(command);
-            @event.ByUser = command.ByUsername;
+            @event.ByUsername = command.ByUsername;
+            @event.ByUserId = command.ByUserId;
             @event.AggregateId = command.AggregateRootId;
 
             await bus.Publish(@event);
@@ -105,12 +106,17 @@ namespace PGMS.CQSLight.Infra.Commands
 
 		    foreach (var @event in events)
 		    {
-			    if (string.IsNullOrEmpty(@event.ByUser))
+			    if (string.IsNullOrEmpty(@event.ByUsername))
 			    {
-				    @event.ByUser = command.ByUsername;
+				    @event.ByUsername = command.ByUsername;
 			    }
 
-			    if (@event.AggregateId == Guid.Empty)
+                if (string.IsNullOrEmpty(@event.ByUserId))
+                {
+                    @event.ByUserId = command.ByUserId;
+                }
+
+				if (@event.AggregateId == Guid.Empty)
 			    {
 				    @event.AggregateId = command.AggregateRootId;
 			    }

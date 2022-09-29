@@ -11,7 +11,9 @@ namespace PGMS.CQSLight.Infra.Commands
     {
         Guid Id { get; }
         string ByUsername { get; set; }
-        Guid AggregateRootId { get; set; }
+        string ByUserId { get; set; }
+
+		Guid AggregateRootId { get; set; }
     }
 
     public class BaseCommand : ICommand
@@ -19,6 +21,7 @@ namespace PGMS.CQSLight.Infra.Commands
         public Guid Id { get; private set; }
 
         public string ByUsername { get; set; }
+        public string ByUserId { get; set; }
 
         public Guid AggregateRootId { get; set; }
 
