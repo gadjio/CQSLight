@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using PGMS.CQSLight.Infra.Commands;
+using PGMS.CQSLight.Infra.Exceptions;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace PGMS.CQSLight.Extensions

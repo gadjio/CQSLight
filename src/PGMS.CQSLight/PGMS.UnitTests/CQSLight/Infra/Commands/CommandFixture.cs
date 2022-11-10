@@ -10,6 +10,7 @@ using NUnit.Framework;
 using PGMS.CQSLight.Extensions;
 using PGMS.CQSLight.Infra.Commands;
 using PGMS.CQSLight.Infra.Commands.Services;
+using PGMS.CQSLight.Infra.Security;
 using PGMS.CQSLight.Installers;
 using PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services;
 using PGMS.Data.Services;
@@ -55,11 +56,12 @@ public class CommandFixture
     public void Check_Base_event_fields()
     {
         var startTime = DateTime.Now;
-        var command = new FakeCommand{AggregateRootId = Guid.NewGuid(), ByUsername = "PrimeUser", ByUserId = "47", Name = "ABC"};
+        var command = new FakeCommand{AggregateRootId = Guid.NewGuid(), Name = "ABC"};
+        var contextInfo = new ContextInfo { ByUsername = "PrimeUser", ByUserId = "47" };
 
         //Act
         var bus = container.Resolve<IBus>();
-        bus.Send(command);
+        bus.Send(command, contextInfo);
 
         //Assert
         var reporting = inMemoryEntityRepository.FindFirst<FakeReporting>(x => x.AggregateRootId == command.AggregateRootId);

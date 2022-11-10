@@ -1,6 +1,5 @@
 ﻿using PGMS.CQSLight.Infra.Commands;
 using PGMS.CQSLight.Infra.Commands.Services;
-using PGMS.Data.Services;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services;
 
@@ -27,14 +26,9 @@ public class FakeBus : IBus
 		return Task.CompletedTask;
 	}
 
-	public Task Send(ICommand command)
+	public Task Send(ICommand command, IContextInfo contextInfo)
 	{
 		PublishedCommands.Add(command);
 		return Task.CompletedTask;
-	}
-
-	public void Send(ICommand command, IUnitOfWork unitOfWork)
-	{
-		PublishedCommands.Add(command);
 	}
 }

@@ -10,18 +10,12 @@ namespace PGMS.CQSLight.Infra.Commands
 	public interface ICommand : IDomainMessage
     {
         Guid Id { get; }
-        string ByUsername { get; set; }
-        string ByUserId { get; set; }
-
-		Guid AggregateRootId { get; set; }
+        Guid AggregateRootId { get; set; }
     }
 
     public class BaseCommand : ICommand
     {
         public Guid Id { get; private set; }
-
-        public string ByUsername { get; set; }
-        public string ByUserId { get; set; }
 
         public Guid AggregateRootId { get; set; }
 

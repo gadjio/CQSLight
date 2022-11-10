@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="CQSLight\Infra\Commands\HandlerRunningPriorityFixtures\" />
+    <Folder Include="CQSLight\Infra\Security\" />
   </ItemGroup>
 
 </Project>

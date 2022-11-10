@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Logging;
@@ -15,8 +14,8 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 		Task Publish<T>(T @event) where T : class, IEvent;
 		
 		Task Publish<T>(IEnumerable<T> events) where T : class, IEvent;
-		
-		Task Send(ICommand command);
+        
+        Task Send(ICommand command, IContextInfo contextInfo);
 	}
 
 	public interface IDirectBusConfigurationProvider
@@ -37,20 +36,17 @@ namespace PGMS.CQSLight.Infra.Commands.Services
 			this.logger = logger;
 		}
 
-		
+        public async Task Send(ICommand command, IContextInfo contextInfo)
+        {
+            var type = typeof(IHandleCommand<>);
+            var genericType = type.MakeGenericType(command.GetType());
+            var service = context.Resolve(genericType);
 
-		public async Task Send(ICommand command)
-		{
-			var type = typeof(IHandleCommand<>);
-			var genericType = type.MakeGenericType(command.GetType());
-			var service = context.Resolve(genericType);
+            MethodInfo methodInfo = genericType.GetMethod("Execute");
+            await (Task)methodInfo.Invoke(service, new object[] { command, contextInfo });
+        }
 
-			MethodInfo methodInfo = genericType.GetMethod("Execute");
-			await (Task)methodInfo.Invoke(service, new object[] { command });
-		}
-
-
-		public async Task Publish<T>(T @event) where T : class, IEvent
+        public async Task Publish<T>(T @event) where T : class, IEvent
 		{
 			var entityRepository = context.Resolve<IUnitOfWorkProvider>();
 

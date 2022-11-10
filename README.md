@@ -27,3 +27,10 @@ Have a look at our sample app based on PGMS.CQSLight
 # What's new
 Version 3.1 -> async function for entityrepository, bus, EventHandlers, CommandHandlers and QueryHandlers
 Version 3.1.0.5 -> EntityRepository - FindAllOperation (return all entries - not fetchsize / offset)
+
+Version 3.2 -> Role Validation
+				Breaking changes :
+					- IBus.Send -> add ContextInfo
+					- IHandleCommand<T>.Execute -> add ContextInfo
+					- ICommand -> Remove ByUsername, ByUserId
+					- BaseCommand -> Remove ByUsername, ByUserId
