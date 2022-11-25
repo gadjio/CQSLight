@@ -7,7 +7,7 @@
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Data Layer</Description>
-    <Version>3.2.0.0-beta</Version>
+    <Version>3.2.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

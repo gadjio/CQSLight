@@ -21,6 +21,11 @@ public static class AllowedRolesHelper
     public static List<string> GetAllowedRoles<T>()
     {
         var t = typeof(T);
+        return GetAllowedRoles(t);
+    }
+
+    public static List<string> GetAllowedRoles(Type t)
+    {
         var allowedRolesAttribute = t.GetCustomAttribute(typeof(AllowedRolesAttribute));
         if (allowedRolesAttribute != null)
         {
