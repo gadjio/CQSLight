@@ -1,0 +1,136 @@
+﻿@typeparam TActionItem
+
+@inject IStringLocalizer localizer;
+
+<Modal @ref="@modal">
+    <ModalContent Size="@ModalSize">
+        <ModalHeader>
+            <ModalTitle>@ModalTitle</ModalTitle>
+            <CloseButton/>
+        </ModalHeader>
+        @if (!string.IsNullOrEmpty(roles))
+        {
+            <AuthorizeView Roles="@roles">
+                <NotAuthorized>    
+                    <ModalBody>
+                        <div style="margin-bottom: 25px">
+                            @localizer["NotAuthorized"]
+                        </div>
+                        
+
+                        <cite>
+                            @localizer["RequiredRoles"]:
+                            @foreach (var role in AuthorizedRoles)
+                            {
+                                <span>@localizer[role] </span>
+                            }
+                        </cite>
+                        <div style="margin: 10px 0px; font-size: x-small;">
+                            @localizer["RequiredRolesExplanation"]
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button Clicked="@(HideModal)">@localizer["Close"]</Button>
+                    </ModalFooter>
+                </NotAuthorized> 
+                <Authorized>
+                    @if (SectionHeader != null)
+                    {
+                        <ModalHeader>
+                            @SectionHeader
+                        </ModalHeader>
+                    }
+                    <ModalBody>
+                        <DynamicComponent Type="@typeof(TActionItem)" Parameters="@ActionParameters"/>
+                        @if (ErrorDisplay != null)
+                        {
+                            @ErrorDisplay(actionComponent?.CommandValidationResults)
+                        }
+                        else
+                        {
+                            @if (actionComponent?.CommandValidationResults != null && actionComponent.CommandValidationResults.Any())
+                            {
+                                <ul style="color: crimson">
+                                    @foreach (var validationResult in actionComponent.CommandValidationResults)
+                                    {
+                                        <li>
+                                            @if (validationResult.MemberNames != null && validationResult.MemberNames.Any())
+                                            {
+                                                @(localizer[validationResult.MemberNames.First()])<span> - </span>
+                                            }
+                                            @localizer[validationResult.ErrorMessage]
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        }
+                       
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                        @if (actionComponent != null)
+                        {
+                            <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing">@ActionButtonLabel</Button>
+                        }
+                    </ModalFooter>
+                </Authorized>
+            </AuthorizeView>
+        }
+        else
+        {
+            @if (SectionHeader != null)
+            {
+                <ModalHeader>
+                    @SectionHeader
+                </ModalHeader>
+            }
+
+            <ModalBody>
+                <DynamicComponent Type="@typeof(TActionItem)" Parameters="@ActionParameters" />
+            
+                @if (ErrorDisplay != null)
+                {
+                    @ErrorDisplay(actionComponent?.CommandValidationResults)
+                }
+                else
+                {
+                    @if (actionComponent?.CommandValidationResults != null && actionComponent.CommandValidationResults.Any())
+                    {
+                        <ul style="color: crimson">
+                            @foreach (var validationResult in actionComponent.CommandValidationResults)
+                            {
+                                <li>
+                                    @if (validationResult.MemberNames != null && validationResult.MemberNames.Any())
+                                    {
+                                        @(localizer[validationResult.MemberNames.First()])<span> - </span>
+                                    }
+                                    @localizer[validationResult.ErrorMessage]
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            </ModalBody>
+            
+
+            <ModalFooter>
+                @if (SectionFooter != null)
+                {
+                    @SectionFooter
+                }
+                else
+                {
+                    <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                    @if (actionComponent != null)
+                    {
+                        <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing">@ActionButtonLabel</Button>
+                    }
+                }
+                
+            </ModalFooter>
+        }
+       
+        
+
+    </ModalContent>
+</Modal>
