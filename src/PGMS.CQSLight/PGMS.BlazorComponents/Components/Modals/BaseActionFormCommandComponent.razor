@@ -11,17 +11,31 @@
     @if (DisplayType == ActionDisplayType.Button)
     {
         <Button Class="zaddons_btn_client" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
-            <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>@Text
+            @if (ActionIcon != null)
+            {
+                <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
+            }
+            @Text
         </Button>
     }
     @if (DisplayType == ActionDisplayType.QuickAction)
     {
-        <Tooltip Text="@Text" Inline>
+        @if (ActionIcon != null)
+        {
+            <Tooltip Text="@Text" Inline>
+                <span @onclick="async () => await DisplayModal()">
+                    <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
+                </span>
+            </Tooltip>
+        }
+        else
+        {
             <span @onclick="async () => await DisplayModal()">
-            <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
+                @Text
             </span>
-        </Tooltip>
+        }
     }
+       
     @if (DisplayType == ActionDisplayType.ActionLink)
     {
         <a href="#" @onclick="async () => await DisplayModal()" @onclick:preventDefault style="cursor: pointer">@Text</a>
