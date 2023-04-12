@@ -6,15 +6,14 @@ using PGMS.BlazorComponents.Models;
 
 namespace PGMS.BlazorComponents.Components.Modals
 {
-    public abstract partial class BaseActionFormCommandComponent<TActionItem, TCommand, TIcon> : ComponentBase where TActionItem : BaseCqsActionComponent<TCommand>
+    public abstract partial class BaseActionFormCommandComponent<TActionItem, TCommand> : ComponentBase where TActionItem : BaseCqsActionComponent<TCommand>
     {
         [Inject] private ISessionInfoProvider SessionInfoProvider { get; set; }
-        [Inject] private IIconGenerator<TIcon> IconGenerator { get; set; }
 
         [Parameter] public ActionDisplayType DisplayType { get; set; }
         [Parameter] public string Text { get; set; }
 
-        [Parameter] public TIcon ActionIcon { get; set; }
+        [Parameter] public IActionIcon ActionIcon { get; set; }
 
         [Parameter] public string ModalTitle { get; set; }
         [Parameter] public string ActionButtonLabel { get; set; }

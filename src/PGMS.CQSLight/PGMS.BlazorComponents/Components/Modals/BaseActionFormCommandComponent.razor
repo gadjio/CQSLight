@@ -1,6 +1,5 @@
 ﻿@typeparam TActionItem
 @typeparam TCommand
-@typeparam TIcon
 
 @using PGMS.BlazorComponents.Models
 @inherits ComponentBase;
@@ -12,14 +11,14 @@
     @if (DisplayType == ActionDisplayType.Button)
     {
         <Button Class="zaddons_btn_client" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
-            <DynamicComponent Type="@IconGenerator.GetIconDynamicComponentType()" Parameters="@IconGenerator.GetParameters(ActionIcon, DisplayType)"></DynamicComponent>@Text
+            <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>@Text
         </Button>
     }
     @if (DisplayType == ActionDisplayType.QuickAction)
     {
         <Tooltip Text="@Text" Inline>
             <span @onclick="async () => await DisplayModal()">
-                <DynamicComponent Type="@IconGenerator.GetIconDynamicComponentType()" Parameters="@IconGenerator.GetParameters(ActionIcon, DisplayType)"></DynamicComponent>
+            <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
             </span>
         </Tooltip>
     }

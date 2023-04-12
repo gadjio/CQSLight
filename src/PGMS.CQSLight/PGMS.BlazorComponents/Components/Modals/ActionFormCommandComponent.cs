@@ -4,7 +4,7 @@ using PGMS.BlazorComponents.Components.Actions;
 namespace PGMS.BlazorComponents.Components.Modals;
 
 
-public class ActionFormCommandComponent<TActionItem, TCommand, TIcon> : BaseActionFormCommandComponent<TActionItem, TCommand, TIcon> where TActionItem : BaseCqsActionComponent<TCommand>
+public class ActionFormCommandComponent<TActionItem, TCommand> : BaseActionFormCommandComponent<TActionItem, TCommand> where TActionItem : BaseCqsActionComponent<TCommand>
 {
     public override Dictionary<string, object> GetActionParameters()
     {
@@ -33,7 +33,7 @@ public class ActionFormCommandComponent<TActionItem, TCommand, TIcon> : BaseActi
 }
 
 
-public class ActionFormComponent<TActionItem, TIcon> : BaseActionFormComponent<TActionItem, TIcon> where TActionItem : BaseCqsActionComponent
+public class ActionFormComponent<TActionItem> : BaseActionFormComponent<TActionItem> where TActionItem : BaseCqsActionComponent
 {
     public override Dictionary<string, object> GetActionParameters()
     {
