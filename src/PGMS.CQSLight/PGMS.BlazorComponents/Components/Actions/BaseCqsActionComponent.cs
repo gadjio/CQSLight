@@ -66,6 +66,18 @@ public abstract class BaseCqsActionComponent : BaseSecureComponent
 
         return true;
     }
+
+    public async Task<bool> ProcessCommands(List<ICommand> commands)
+    {
+        var result = await SendCommands(commands);
+        if (!result.IsSuccess)
+        {
+            CommandValidationResults = result.ValidationResults;
+            return false;
+        }
+
+        return true;
+    }
 }
 
 public class SendCommandResult

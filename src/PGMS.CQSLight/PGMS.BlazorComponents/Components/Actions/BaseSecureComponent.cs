@@ -77,7 +77,7 @@ namespace PGMS.BlazorComponents.Components.Actions
             return await Task.FromResult(new SendCommandResult { IsSuccess = true });
         }
 
-        protected async Task<bool> SendCommands(List<ICommand> commands)
+        protected async Task<SendCommandResult> SendCommands(List<ICommand> commands)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace PGMS.BlazorComponents.Components.Actions
             catch (DomainValidationException e)
             {
                 ErrorHandlerService.ShowError(e);
-                return await Task.FromResult(false);
+                return await Task.FromResult(new SendCommandResult { ValidationResults = e.ValidationResult });
             }
             catch (Exception e)
             {
@@ -94,7 +94,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                 if (exception != null)
                 {
                     ErrorHandlerService.ShowError(exception); ;
-                    return await Task.FromResult(false);
+                    return await Task.FromResult(new SendCommandResult { ValidationResults = exception.ValidationResult });
                 }
 
                 if (!await ErrorHandlerService.HandleError(e))
@@ -102,7 +102,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                     throw;
                 }
             }
-            return await Task.FromResult(true);
+            return await Task.FromResult(new SendCommandResult { IsSuccess = true });
         }
 
 
