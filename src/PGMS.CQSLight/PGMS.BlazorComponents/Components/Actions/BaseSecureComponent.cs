@@ -16,7 +16,7 @@ namespace PGMS.BlazorComponents.Components.Actions
         [Inject] private IErrorHandlerService ErrorHandlerService { get; set; }
         [Inject] private ISessionInfoProvider SessionInfoProvider { get; set; }
 
-        protected bool Loading;
+        protected bool Loading = true;
 
         protected RestrictedViewAttribute restrictedViewAttribute;
 

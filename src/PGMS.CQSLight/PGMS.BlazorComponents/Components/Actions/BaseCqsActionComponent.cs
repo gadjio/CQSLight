@@ -6,9 +6,6 @@ using ICommand = PGMS.CQSLight.Infra.Commands.ICommand;
 namespace PGMS.BlazorComponents.Components.Actions;
 
 
-public abstract class BaseCqsActionComponent<TCommand> : BaseCqsActionComponent
-{ }
-
 public abstract class BaseCqsActionComponent : BaseSecureComponent
 {
     [Inject] protected IDataService dataService { get; set; }

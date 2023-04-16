@@ -6,7 +6,7 @@ using PGMS.BlazorComponents.Models;
 
 namespace PGMS.BlazorComponents.Components.Modals
 {
-    public abstract partial class BaseActionFormCommandComponent<TActionItem, TCommand> : ComponentBase where TActionItem : BaseCqsActionComponent<TCommand>
+    public abstract partial class BaseActionFormCommandComponent<TActionItem, TCommand> : ComponentBase where TActionItem : BaseCqsActionComponent
     {
         [Inject] private ISessionInfoProvider SessionInfoProvider { get; set; }
 
