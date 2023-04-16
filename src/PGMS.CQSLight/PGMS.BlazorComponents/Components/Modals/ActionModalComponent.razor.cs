@@ -48,6 +48,7 @@ namespace PGMS.BlazorComponents.Components.Modals
 
         public string roles = "";
 
+        private bool isSubmitDisabled = false;
 
         protected override async Task OnParametersSetAsync()
         {
@@ -104,6 +105,7 @@ namespace PGMS.BlazorComponents.Components.Modals
                 actionComponent.ResetValidationResults();
                 await modal.Show();
                 await actionComponent.InitCommand();
+                isSubmitDisabled = await actionComponent.IsSubmitDisabled();
                 await actionComponent.SetLoadingComplete();
                 StateHasChanged();
 			}

@@ -78,6 +78,11 @@ public abstract class BaseCqsActionComponent : BaseSecureComponent
 
         return true;
     }
+
+    public virtual Task<bool> IsSubmitDisabled()
+    {
+        return Task.FromResult(false);
+    }
 }
 
 public class SendCommandResult
