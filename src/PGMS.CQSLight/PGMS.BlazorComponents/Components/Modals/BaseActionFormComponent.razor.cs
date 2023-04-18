@@ -10,7 +10,7 @@ namespace PGMS.BlazorComponents.Components.Modals
         [Parameter] public ActionDisplayType DisplayType { get; set; }
         [Parameter] public string Text { get; set; }
 
-        [Parameter] public IActionIcon ActionIcon { get; set; }
+        [Parameter] public IDynamicIcon DynamicIcon { get; set; }
 
         [Parameter] public string ModalTitle { get; set; }
         [Parameter] public string ActionButtonLabel { get; set; }

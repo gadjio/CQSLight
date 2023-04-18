@@ -10,7 +10,7 @@
 {
     @if (DisplayType == ActionDisplayType.Button)
     {
-        <Button Class="zaddons_btn_client" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
+        <Button Class="action_form_btn" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
             @if (ActionIcon != null)
             {
                 <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>

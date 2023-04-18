@@ -7,15 +7,15 @@
 
     @if (DisplayType == ActionDisplayType.Button)
     {
-        <Button Class="zaddons_btn_client" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
-            <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
+    <Button Class="action_form_btn" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
+            <DynamicComponent Type="@DynamicIcon.GetIconDynamicComponentType()" Parameters="@DynamicIcon.GetParameters(DisplayType)"></DynamicComponent>
         </Button>
     }
     @if (DisplayType == ActionDisplayType.QuickAction)
     {
         <Tooltip Text="@Text" Inline>
             <span @onclick="async () => await DisplayModal()">
-                <DynamicComponent Type="@ActionIcon.GetIconDynamicComponentType()" Parameters="@ActionIcon.GetParameters(DisplayType)"></DynamicComponent>
+                <DynamicComponent Type="@DynamicIcon.GetIconDynamicComponentType()" Parameters="@DynamicIcon.GetParameters(DisplayType)"></DynamicComponent>
             </span>
         </Tooltip>
     }

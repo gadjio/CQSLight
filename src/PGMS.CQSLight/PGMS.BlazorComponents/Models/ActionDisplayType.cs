@@ -15,7 +15,7 @@ public enum ActionFormType
     Modal,
 }
 
-public interface IActionIcon
+public interface IDynamicIcon
 {
     Type GetIconDynamicComponentType();
     Dictionary<string, object> GetParameters(ActionDisplayType actionDisplayType);
