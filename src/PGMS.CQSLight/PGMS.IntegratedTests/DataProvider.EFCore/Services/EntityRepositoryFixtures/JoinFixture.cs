@@ -10,7 +10,7 @@ using PGMS.DataProvider.EFCore.Services;
 
 namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixtures
 {
-	[TestFixture]
+    [TestFixture]
 	public class JoinFixture
 	{
 		private IEntityRepository entityRepository;

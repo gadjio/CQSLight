@@ -677,9 +677,16 @@ namespace PGMS.DataProvider.EFCore.Services
             this.factory = factory;            
         }
 
+        public async Task<IUnitOfWork> GetUnitOfWorkAsync(bool autoFlush = true)
+        {
+            return await UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
+        }
+
         public IUnitOfWork GetUnitOfWork(bool autoFlush = true)
         {
-            return UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
+            var task = UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
+            task.Wait();
+            return task.Result;
         }
 
         public string GetConnectionString()
@@ -689,98 +696,83 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public virtual IList<TEntity> GetListWithRawSql<TEntity>(string query, params object[] parameters) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                var dbSet = GetDbSet<TEntity>(unitOfWork);
-                return dbSet.FromSqlRaw(query, parameters).ToList();
-            }
+            using var unitOfWork = GetUnitOfWork();
+            var dbSet = GetDbSet<TEntity>(unitOfWork);
+            return dbSet.FromSqlRaw(query, parameters).ToList();
         }
 
         public virtual async Task<List<TEntity>> GetListWithRawSqlAsync<TEntity>(string query, params object[] parameters) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                var dbSet = GetDbSet<TEntity>(unitOfWork);
-                return await dbSet.FromSqlRaw(query, parameters).ToListAsync();
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            var dbSet = GetDbSet<TEntity>(unitOfWork);
+            return await dbSet.FromSqlRaw(query, parameters).ToListAsync();
         }
 
         public virtual IList<TOutput> GetNonEntityWithRawSql<TEntity, TOutput>(string query, Expression<Func<TEntity, TOutput>> transformer = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                var dbSet = GetDbSet<TEntity>(unitOfWork);
-                return dbSet.FromSqlRaw(query, Array.Empty<Object>()).Select(transformer).ToList();
-            }
+            using var unitOfWork = GetUnitOfWork();
+            var dbSet = GetDbSet<TEntity>(unitOfWork);
+            return dbSet.FromSqlRaw(query, Array.Empty<Object>()).Select(transformer).ToList();
         }
 
         public virtual async Task<List<TOutput>> GetNonEntityWithRawSqlAsync<TEntity, TOutput>(string query, Expression<Func<TEntity, TOutput>> transformer = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                var dbSet = GetDbSet<TEntity>(unitOfWork);
-                return await dbSet.FromSqlRaw(query, Array.Empty<Object>()).Select(transformer).ToListAsync();
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+
+            var dbSet = GetDbSet<TEntity>(unitOfWork);
+            return await dbSet.FromSqlRaw(query, Array.Empty<Object>()).Select(transformer).ToListAsync();
         }
 
         public IList<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>> filter = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            return GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
         }
 
         public async Task<List<TEntity>> GetAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
         }
 
         public IList<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
+            using var unitOfWork = GetUnitOfWork();
+            int fetchSize = 2000;
+
+            var result = new List<TEntity>();
+            IList<TEntity> subList;
+            int offset = 0;
+
+            do
             {
-                int fetchSize = 2000;
+                subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset); 
+                offset = offset + fetchSize;
+                result.AddRange(subList);
+            } while (subList.Any());
 
-                var result = new List<TEntity>();
-                IList<TEntity> subList;
-                int offset = 0;
-
-                do
-                {
-                    subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset); 
-                    offset = offset + fetchSize;
-                    result.AddRange(subList);
-                } while (subList.Any());
-
-                return result;
-            }
+            return result;
         }
 
         public async Task<List<TEntity>> FindAllAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            int fetchSize = 2000;
+
+            var result = new List<TEntity>();
+            IList<TEntity> subList;
+            int offset = 0;
+
+            do
             {
-                int fetchSize = 2000;
+                subList = await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
+                offset = offset + fetchSize;
+                result.AddRange(subList);
+            } while (subList.Any());
 
-                var result = new List<TEntity>();
-                IList<TEntity> subList;
-                int offset = 0;
-
-                do
-                {
-                    subList = await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
-                    offset = offset + fetchSize;
-                    result.AddRange(subList);
-                } while (subList.Any());
-
-                return result;
-            }
+            return result;
         }
 
 
@@ -789,123 +781,95 @@ namespace PGMS.DataProvider.EFCore.Services
             int fetchSize = 200,
             int offset = 0) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return GetOperation(unitOfWork, filter, orderBy, fetchSize, offset).ToList();
-            }
+            using var unitOfWork = GetUnitOfWork();
+            return GetOperation(unitOfWork, filter, orderBy, fetchSize, offset).ToList();
         }
 
         public async Task<List<TEntity>> FindTopAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
             int fetchSize = 200,
             int offset = 0) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
         }
 
         public async Task<List<TEntity>> FindTopDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
 	        int fetchSize = 200,
 	        int offset = 0) where TEntity : class
         {
-	        using (var unitOfWork = GetUnitOfWork())
-	        {
-		        return await GetDistinctOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
-	        }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await GetDistinctOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
         }
 
         public TEntity FindFirst<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return FindFirstOperation(unitOfWork, filter);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            return FindFirstOperation(unitOfWork, filter);
         }
         public async Task<TEntity> FindFirstAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return await FindFirstOperationAsync(unitOfWork, filter);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await FindFirstOperationAsync(unitOfWork, filter);
         }
 
 
         public int Count<TEntity>( Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return CountOperation(unitOfWork, filter);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            return CountOperation(unitOfWork, filter);
         }
         public async Task<int> CountAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return await CountOperationAsync(unitOfWork, filter);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await CountOperationAsync(unitOfWork, filter);
         }
         public async Task<int> CountDistinctAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-	        using (var unitOfWork = GetUnitOfWork())
-	        {
-		        return await CountDistinctOperationAsync(unitOfWork, filter);
-	        }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await CountDistinctOperationAsync(unitOfWork, filter);
         }
 
         public Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class
         {
-	        using (var unitOfWork = GetUnitOfWork())
-	        {
-		        return CountOperation(unitOfWork, filter, groupBy);
-	        }
+            using var unitOfWork = GetUnitOfWork();
+            return CountOperation(unitOfWork, filter, groupBy);
         }
 
         public async Task<Dictionary<TKey, int>> CountAsync<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                return await CountOperationAsync(unitOfWork, filter, groupBy);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await CountOperationAsync(unitOfWork, filter, groupBy);
         }
 
         public virtual void Insert<TEntity>(TEntity entity) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                InsertOperation(unitOfWork, entity);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            InsertOperation(unitOfWork, entity);
         }
 
         public virtual async Task InsertAsync<TEntity>(TEntity entity) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                await InsertOperationAsync(unitOfWork, entity);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            await InsertOperationAsync(unitOfWork, entity);
         }
 
         public virtual void Delete<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
+            using var unitOfWork = GetUnitOfWork();
+            var entities = GetOperation(unitOfWork, filter);
+            foreach (var entity in entities)
             {
-                var entities = GetOperation(unitOfWork, filter);
-                foreach (var entity in entities)
-                {
-                    DeleteOperation(unitOfWork, entity);
-                }
+                DeleteOperation(unitOfWork, entity);
             }
         }
 
         public virtual async Task DeleteAsync<TEntity>(Expression<Func<TEntity, bool>> filter = null) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            var entities = await GetOperationAsync(unitOfWork, filter);
+            foreach (var entity in entities)
             {
-                var entities = await GetOperationAsync(unitOfWork, filter);
-                foreach (var entity in entities)
-                {
-                    await DeleteOperationAsync(unitOfWork, entity);
-                }
+                await DeleteOperationAsync(unitOfWork, entity);
             }
         }
 
@@ -916,10 +880,8 @@ namespace PGMS.DataProvider.EFCore.Services
                 return;
             }
 
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                DeleteOperation(unitOfWork, entityToDelete);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            DeleteOperation(unitOfWork, entityToDelete);
         }
 
         public virtual async Task DeleteAsync<TEntity>(TEntity entityToDelete) where TEntity : class
@@ -929,73 +891,56 @@ namespace PGMS.DataProvider.EFCore.Services
                 return;
             }
 
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                await DeleteOperationAsync(unitOfWork, entityToDelete);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            await DeleteOperationAsync(unitOfWork, entityToDelete);
         }
 
         public virtual void Update<TEntity>(TEntity entityToUpdate) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                UpdateOperation(unitOfWork, entityToUpdate);
-            }
+            using var unitOfWork = GetUnitOfWork();
+            UpdateOperation(unitOfWork, entityToUpdate);
         }
 
         public virtual async Task UpdateAsync<TEntity>(TEntity entityToUpdate) where TEntity : class
         {
-            using (var unitOfWork = GetUnitOfWork())
-            {
-                await UpdateOperationAsync(unitOfWork, entityToUpdate);
-            }
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            await UpdateOperationAsync(unitOfWork, entityToUpdate);
         }
 
         public void ExecuteInTransaction(Action<IUnitOfWork> action)
         {
-            using (var unitOfWork = this.GetUnitOfWork())
+            using var unitOfWork = this.GetUnitOfWork();
+            using var transaction = GetContext(unitOfWork).Database.BeginTransaction();
+
+            try
             {
-                using (var transaction = GetContext(unitOfWork).Database.BeginTransaction())
-                {
-                    try
-                    {
-                        action.Invoke(unitOfWork);
-                        unitOfWork.Save();
+                action.Invoke(unitOfWork);
+                unitOfWork.Save();
 
-                        transaction.Commit();
-                    }
-                    catch (Exception)
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                    
-                }
-
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
         public async Task ExecuteInTransactionAsync(Action<IUnitOfWork> action)
         {
-            using (var unitOfWork = this.GetUnitOfWork())
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            await using var transaction = await GetContext(unitOfWork).Database.BeginTransactionAsync();
+            try
             {
-                using (var transaction = await GetContext(unitOfWork).Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        action.Invoke(unitOfWork);
-                        unitOfWork.Save();
+                action.Invoke(unitOfWork);
+                unitOfWork.Save();
 
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception)
-                    {
-                        await transaction.RollbackAsync();
-                        throw;
-                    }
-
-                }
-
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
