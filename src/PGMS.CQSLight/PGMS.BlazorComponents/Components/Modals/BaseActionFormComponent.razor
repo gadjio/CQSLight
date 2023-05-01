@@ -1,0 +1,55 @@
+﻿@typeparam TActionItem
+
+@using PGMS.BlazorComponents.Models
+@inherits ComponentBase;
+
+@inject IStringLocalizer localizer;
+
+    @if (DisplayType == ActionDisplayType.Button)
+    {
+    <Button Class="action_form_btn" Color="Color.Secondary" @onclick="async () => await DisplayModal()" Block Disabled="@Disabled">
+            <DynamicComponent Type="@DynamicIcon.GetIconDynamicComponentType()" Parameters="@DynamicIcon.GetParameters(DisplayType)"></DynamicComponent>
+        </Button>
+    }
+    @if (DisplayType == ActionDisplayType.QuickAction)
+    {
+        <Tooltip Text="@Text" Inline>
+            <span @onclick="async () => await DisplayModal()">
+                <DynamicComponent Type="@DynamicIcon.GetIconDynamicComponentType()" Parameters="@DynamicIcon.GetParameters(DisplayType)"></DynamicComponent>
+            </span>
+        </Tooltip>
+    }
+    @if (DisplayType == ActionDisplayType.ActionLink)
+    {
+        <a href="#" @onclick="async () => await DisplayModal()" @onclick:preventDefault style="cursor: pointer">@Text</a>
+    }
+
+    @if (ActionFormType == ActionFormType.SidePanel)
+    {
+        <ActionSidePanelComponent TActionItem="TActionItem" @ref="@actionItem"
+                                  ActionParameters="@actionParameters"
+                                  ModalTitle="@(string.IsNullOrEmpty(ModalTitle) ? Text : ModalTitle)"
+                                  ActionButtonLabel="@(string.IsNullOrEmpty(ActionButtonLabel) ? localizer["Continue"] : ActionButtonLabel)"
+                                  OnActionCompleted="async () => await OnActionCompleted.InvokeAsync()">
+        </ActionSidePanelComponent>
+    }
+    @if (ActionFormType == ActionFormType.Modal)
+    {
+        <ActionModalComponent TActionItem="TActionItem" @ref="@actionItem"
+                          ActionParameters="@actionParameters"
+                          ModalTitle="@(string.IsNullOrEmpty(ModalTitle) ? Text : ModalTitle)"
+                          ActionButtonLabel="@(string.IsNullOrEmpty(ActionButtonLabel) ? localizer["Continue"] : ActionButtonLabel)"
+                          ModalSize="@ModalSize"
+                          OnActionCompleted="async () => await OnActionCompleted.InvokeAsync()">
+        </ActionModalComponent>
+    }
+   @* @if (ActionFormType == ActionFormType.ModalMultiStep)
+    {
+        <ActionModalMultiStepComponent TActionItem="TActionItem" @ref="@actionItem"
+                              ActionParameters="@actionParameters"
+                              ModalTitle="@(string.IsNullOrEmpty(ModalTitle) ? Text : ModalTitle)"
+                              ActionButtonLabel="@(string.IsNullOrEmpty(ActionButtonLabel) ? localizer["Continue"] : ActionButtonLabel)"
+                              ModalSize="@ModalSize"
+                              OnActionCompleted="async () => await OnActionCompleted.InvokeAsync()">
+        </ActionModalMultiStepComponent>
+    }*@

@@ -1,0 +1,121 @@
+﻿@using PGMS.BlazorComponents.Models;
+@typeparam TActionItem
+
+@inject IStringLocalizer localizer;
+
+<div>
+    <div class="@(open && Side == ModalPanelSide.Right? "sidebar-noview" : "sidebar-hidden")"></div>
+    <aside class="@GetSidePanelMainClasses()">
+        <div class="aside-inner">
+
+            <div class="side-header @(open ? "" : "sidebar-hidden")">
+                <Badge Class="side-header-badge" Pill>@ModalTitle</Badge>
+                <button type="button" @onclick="HideModal" class="ml-auto" style="float: right">
+                    <span class="material-icons">
+                        close
+                    </span>
+                </button>
+            </div>
+            <hr class="side-hr-top"/>
+
+            @if (!string.IsNullOrEmpty(roles))
+            {
+                <AuthorizeView Roles="@roles">
+                    <NotAuthorized>
+                        <div class="inner-component">
+                            <div style="margin-bottom: 25px">
+                                @localizer["NotAuthorized"]
+                            </div>
+
+
+                            <cite>
+                                @localizer["RequiredRoles"]:
+                                @foreach (var role in AuthorizedRoles)
+                                {
+                                    <span>@localizer[role] </span>
+                                }
+                            </cite>
+                            <div style="margin: 10px 0px; font-size: x-small;">
+                                @localizer["RequiredRolesExplanation"]
+                            </div>
+                        </div>
+                        <div class="sticky-bottombar side-panel-bottombar">
+                            <Button Clicked="@(HideModal)">@localizer["Close"]</Button>
+                        </div>
+                    </NotAuthorized>
+                    <Authorized>
+                        <div class="inner-component">
+                            <DynamicComponent Type="@typeof(TActionItem)" Parameters="@ActionParameters"/>
+
+                            @if (actionComponent?.CommandValidationResults != null && actionComponent.CommandValidationResults.Any())
+                            {
+                                <ul style="color: crimson">
+                                    @foreach (var validationResult in actionComponent.CommandValidationResults)
+                                    {
+                                        <li>
+                                            @if (validationResult.MemberNames != null && validationResult.MemberNames.Any())
+                                            {
+                                                @(localizer[validationResult.MemberNames.First()])
+
+                                                <span> - </span>
+                                            }
+                                            @localizer[validationResult.ErrorMessage]
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                        <div class="side-footer">
+                            @if (actionComponent != null)
+                            {
+                                <Button class="action-btn-primary" Clicked="@ProcessAction" Loading="@actionProcessing">@ActionButtonLabel</Button>
+                            }
+                            <Button class="action-btn-primary" Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+
+                        </div>
+                    </Authorized>
+                </AuthorizeView>
+            }
+            else
+            {
+                <div class="inner-component">
+                    <DynamicComponent Type="@typeof(TActionItem)" Parameters="@ActionParameters"/>
+
+                    @if (actionComponent?.CommandValidationResults != null && actionComponent.CommandValidationResults.Any())
+                    {
+                        <ul style="color: crimson">
+                            @foreach (var validationResult in actionComponent.CommandValidationResults)
+                            {
+                                <li>
+                                    @if (validationResult.MemberNames != null && validationResult.MemberNames.Any())
+                                    {
+                                        @(localizer[validationResult.MemberNames.First()])
+
+                                        <span> - </span>
+                                    }
+                                    @localizer[validationResult.ErrorMessage]
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+                <hr class="side-hr-bottom"/>
+                <div class="side-footer">
+                    <div class="side-footer-left"></div>
+                    <div class="side-footer-right">
+                        @if (actionComponent != null)
+                        {
+                            <Button class="action-btn-primary" Clicked="@ProcessAction" Loading="@actionProcessing">@ActionButtonLabel</Button>
+                        }
+                        <Button class="action-btn-primary" Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    </aside>
+    <div class="@(open && Side == ModalPanelSide.Left ? "sidebar-noview" : "sidebar-hidden")"></div>
+</div>
+
