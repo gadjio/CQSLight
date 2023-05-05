@@ -48,7 +48,7 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixt
 				entityRepository.Insert(new PersonReporting { AggregateRootId = QADataProvider.DwightSchruteId, Name = "Dwight" });
 			}
 
-			unixTimeStampMs = DateTime.Now.ToEpochInMilliseconds();
+			unixTimeStampMs = (long)DateTime.Now.ToEpochInMilliseconds();
 			entityRepository.Insert(new LogEntryReporting { PersonId = QADataProvider.AngelaMartinId, UnixTimeStampMs = unixTimeStampMs, LocationId = QADataProvider.LocationId });
 			entityRepository.Insert(new LogEntryReporting { PersonId = QADataProvider.CreedBrattonId, UnixTimeStampMs = unixTimeStampMs, LocationId = QADataProvider.LocationId });
 			entityRepository.Insert(new LogEntryReporting { PersonId = QADataProvider.DwightSchruteId, UnixTimeStampMs = unixTimeStampMs, LocationId = QADataProvider.LocationId });
