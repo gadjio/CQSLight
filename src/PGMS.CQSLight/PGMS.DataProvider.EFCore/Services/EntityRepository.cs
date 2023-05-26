@@ -491,6 +491,16 @@ namespace PGMS.DataProvider.EFCore.Services
 
         }
 
+        public virtual async Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
+        {
+            var context = GetContext(unitOfWork);
+            context.AddRange(entities);
+            if (unitOfWork.IsAutoFlush())
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
         public virtual void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
         {
 	        var context = GetContext(unitOfWork);

@@ -12,7 +12,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 
 	public class InMemoryEntityRepository : IEntityRepository
 	{
-		private IDictionary<Type, IList<object>> inMemoryMap = new Dictionary<Type, IList<object>>();
+		private IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
 
 		public IList<TEntity> GetListWithRawSql<TEntity>(string query, params object[] parameters) where TEntity : class
 		{
@@ -247,7 +247,19 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 			return Task.CompletedTask;
 		}
 
-		public void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
+        public Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
+        {
+            var key = typeof(TEntity);
+            if (!inMemoryMap.ContainsKey(key))
+            {
+                inMemoryMap.Add(key, new List<object>());
+            }
+
+            inMemoryMap[key].AddRange(entities);
+            return Task.CompletedTask;
+        }
+
+        public void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
 		{
 			var key = typeof(TEntity);
 			inMemoryMap[key].Remove(entityToDelete);

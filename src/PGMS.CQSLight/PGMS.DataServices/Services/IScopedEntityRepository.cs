@@ -38,8 +38,9 @@ namespace PGMS.Data.Services
 
 		void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class;
         Task InsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class;
+        Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class;
 
-		void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class;
+        void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class;
         Task DeleteOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class;
 
 		void DeleteManyOperation<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entitiesToDelete) where TEntity : class;
