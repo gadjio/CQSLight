@@ -104,7 +104,7 @@
                                     {
                                         @(localizer[validationResult.MemberNames.First()])<span> - </span>
                                     }
-                                    @localizer[validationResult.ErrorMessage]
+                                    @((MarkupString)(localizer[validationResult.ErrorMessage]?.Value ?? validationResult.ErrorMessage))
                                 </li>
                             }
                         </ul>
