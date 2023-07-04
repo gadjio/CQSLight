@@ -29,6 +29,9 @@ namespace PGMS.BlazorComponents.Components.Modals
         public EventCallback OnActionCompleted { get; set; }
 
         [Parameter]
+        public EventCallback OnCloseModal { get; set; }
+
+        [Parameter]
         public ModalSize ModalSize { get; set; } = ModalSize.Large;
 
         [Parameter]
@@ -98,7 +101,7 @@ namespace PGMS.BlazorComponents.Components.Modals
 			StateHasChanged();
 
             actionProcessing = false;
-            
+
             if (actionComponent != null)
             {
 	            await actionComponent.SetLoading();
@@ -115,6 +118,20 @@ namespace PGMS.BlazorComponents.Components.Modals
         public async Task HideModal()
         {
             await modal.Hide();
+
+            if (OnCloseModal.HasDelegate)
+            {
+                await OnCloseModal.InvokeAsync();
+            }
+            
+        }
+
+        private async Task OnModalClosing(ModalClosingEventArgs arg)
+        {
+            if (OnCloseModal.HasDelegate)
+            {
+                await OnCloseModal.InvokeAsync();
+            }
         }
     }
 }
