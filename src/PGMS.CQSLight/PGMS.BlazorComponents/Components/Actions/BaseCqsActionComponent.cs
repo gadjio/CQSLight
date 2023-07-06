@@ -11,6 +11,12 @@ public abstract class BaseCqsActionComponent : BaseSecureComponent
     [Inject] protected IDataService dataService { get; set; }
     [Inject] protected IEntityRepository entityRepository { get; set; }
 
+    public event Action RefreshRequested;
+    public void CallRequestRefresh()
+    {
+        RefreshRequested?.Invoke();
+    }
+
     [Parameter]
     public EventCallback<Action<BaseCqsActionComponent>> RegisterItemChanged { get; set; }
 

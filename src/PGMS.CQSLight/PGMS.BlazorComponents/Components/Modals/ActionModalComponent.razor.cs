@@ -74,8 +74,14 @@ namespace PGMS.BlazorComponents.Components.Modals
         protected void RegisterActionItem(BaseCqsActionComponent actionItem)
         {
             actionComponent = actionItem;
+            actionComponent.RefreshRequested += async () => await RefreshAsync();
         }
 
+        private async Task RefreshAsync()
+        {
+            isSubmitDisabled = await actionComponent.IsSubmitDisabled();
+            StateHasChanged();
+        }
 
         public async Task ProcessAction()
         {
@@ -112,8 +118,9 @@ namespace PGMS.BlazorComponents.Components.Modals
                 await actionComponent.SetLoadingComplete();
                 StateHasChanged();
 			}
-            
         }
+
+        
 
         public async Task HideModal()
         {
