@@ -43,7 +43,52 @@ public class CommandHandlerAddToContextInfo
         Assert.That(myFakeEvent.UserFullName, Is.EqualTo("Optimus Prime"));
 
         Assert.That(bus.PublishedEvents.Count, Is.EqualTo(1));
-        
+    }
+
+    [Test]
+    public void Retrocompatibility_RegularContextInfo()
+    {
+        var cmd = new MyFakeCommand();
+        var myContext = new ContextInfo
+        {
+            ByUsername = "PrimeUser",
+        };
+        //Act
+        var executeCommandTask = commandHandler.Execute(cmd, myContext);
+        executeCommandTask.Wait();
+
+        //Assert
+        var @event = bus.PublishedEvents[0];
+        Assert.That(@event, Is.TypeOf<MyFakeEvent>());
+        var myFakeEvent = (@event as MyFakeEvent);
+        Assert.That(myFakeEvent, Is.Not.Null);
+        Assert.That(myFakeEvent.UserFullName, Is.Null);
+
+        Assert.That(bus.PublishedEvents.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Retrocompatibility_StandardEvent()
+    {
+        var cmd = new MyFakeCommand();
+        var myContext = new MyCustomContextInfo
+        {
+            ByUsername = "PrimeUser",
+            UserFullName = "Optimus Prime"
+        };
+        //Act
+        var myCommandHandler = new MyFakeDomainEventCommandHandler(bus);
+        var executeCommandTask = myCommandHandler.Execute(cmd, myContext);
+        executeCommandTask.Wait();
+
+        //Assert
+        var @event = bus.PublishedEvents[0];
+        Assert.That(@event, Is.TypeOf<MyFakeDomainEvent>());
+        var myFakeEvent = (@event as MyFakeDomainEvent);
+        Assert.That(myFakeEvent, Is.Not.Null);
+        Assert.That(myFakeEvent.UserFullName, Is.Null);
+
+        Assert.That(bus.PublishedEvents.Count, Is.EqualTo(1));
     }
 }
 
@@ -116,3 +161,32 @@ public class MyFakeEvent : MyCustomDomainEvent<IMyFakeCommand>
     {
     }
 }
+
+#region Fake command hanlder with base domain event
+
+public class MyFakeDomainEvent : DomainEvent<IMyFakeCommand>
+{
+    public MyFakeDomainEvent(IMyFakeCommand parameters) : base(parameters)
+    {
+    }
+
+    public string UserFullName { get; set; }
+}
+
+public class MyFakeDomainEventCommandHandler : MyCustomBaseCommandHandlerAsync<MyFakeCommand>
+{
+    public MyFakeDomainEventCommandHandler(IBus bus) : base(bus)
+    {
+    }
+
+    public override Task<List<ValidationResult>> ValidateCommand(MyFakeCommand command)
+    {
+        return Task.FromResult(new List<ValidationResult>());
+    }
+
+    public override Task<IEvent> PublishEvent(MyFakeCommand command)
+    {
+        return Task.FromResult<IEvent>(new MyFakeDomainEvent(command));
+    }
+}
+#endregion
