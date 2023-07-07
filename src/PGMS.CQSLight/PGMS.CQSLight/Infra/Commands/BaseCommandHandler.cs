@@ -36,10 +36,15 @@ public abstract class BaseCommandHandler<T> : HandleCommand<T> where T : BaseCom
     public override async Task ProcessCommand(T command, IContextInfo contextInfo)
     {
         var @event = PublishEvent(command);
+        SetEventContextInfo(command, contextInfo, @event);
+
+        await bus.Publish(@event);
+    }
+
+    protected virtual void SetEventContextInfo(T command, IContextInfo contextInfo, IEvent @event)
+    {
         @event.ByUsername = contextInfo.ByUsername;
         @event.ByUserId = contextInfo.ByUserId;
         @event.AggregateId = command.AggregateRootId;
-
-        await bus.Publish(@event);
     }
 }

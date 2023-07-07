@@ -39,23 +39,28 @@ public abstract class BaseCommandHandlerMultipleEvents<T> : HandleCommand<T> whe
 
         foreach (var @event in events)
         {
-            if (string.IsNullOrEmpty(@event.ByUsername))
-            {
-                @event.ByUsername = contextInfo.ByUsername;
-            }
-
-            if (string.IsNullOrEmpty(@event.ByUserId))
-            {
-                @event.ByUserId = contextInfo.ByUserId;
-            }
-
-            if (@event.AggregateId == Guid.Empty)
-            {
-                @event.AggregateId = command.AggregateRootId;
-            }
+            SetEventContextInfo(command, contextInfo, @event);
         }
 
         await bus.Publish(@events);
+    }
+
+    protected virtual void SetEventContextInfo(T command, IContextInfo contextInfo, IEvent @event)
+    {
+        if (string.IsNullOrEmpty(@event.ByUsername))
+        {
+            @event.ByUsername = contextInfo.ByUsername;
+        }
+
+        if (string.IsNullOrEmpty(@event.ByUserId))
+        {
+            @event.ByUserId = contextInfo.ByUserId;
+        }
+
+        if (@event.AggregateId == Guid.Empty)
+        {
+            @event.AggregateId = command.AggregateRootId;
+        }
     }
 
 }
