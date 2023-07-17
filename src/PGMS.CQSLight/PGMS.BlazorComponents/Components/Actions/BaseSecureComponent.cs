@@ -51,7 +51,7 @@ namespace PGMS.BlazorComponents.Components.Actions
         {
             try
             {
-                await CommandHelper.Send(command, SessionInfoProvider.GetContextInfo());
+                await CommandHelper.Send(command, GetContextInfo());
             }
             catch (DomainValidationException e)
             {
@@ -75,6 +75,11 @@ namespace PGMS.BlazorComponents.Components.Actions
             
             }
             return await Task.FromResult(new SendCommandResult { IsSuccess = true });
+        }
+
+        protected virtual ContextInfo GetContextInfo()
+        {
+            return SessionInfoProvider.GetContextInfo();
         }
 
         protected async Task<SendCommandResult> SendCommands(List<ICommand> commands)
