@@ -5,11 +5,10 @@ using ICommand = PGMS.CQSLight.Infra.Commands.ICommand;
 
 namespace PGMS.BlazorComponents.Components.Actions;
 
-
 public abstract class BaseCqsActionComponent : BaseSecureComponent
 {
-    [Inject] protected IDataService dataService { get; set; }
-    [Inject] protected IEntityRepository entityRepository { get; set; }
+    [Inject] public IDataService dataService { get; set; }
+    [Inject] public IEntityRepository entityRepository { get; set; }
 
     public event Action RefreshRequested;
     public void CallRequestRefresh()
