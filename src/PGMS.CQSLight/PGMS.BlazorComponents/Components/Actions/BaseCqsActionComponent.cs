@@ -85,6 +85,11 @@ public abstract class BaseCqsActionComponent : BaseSecureComponent
     {
         return Task.FromResult(false);
     }
+
+    public virtual string? ActionButtonLabel()
+    {
+        return null;
+    }
 }
 
 public class SendCommandResult

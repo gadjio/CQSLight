@@ -70,7 +70,7 @@
                         <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
                         @if (actionComponent != null)
                         {
-                            <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing" Disabled="@isSubmitDisabled">@ActionButtonLabel</Button>
+                            <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing" Disabled="@isSubmitDisabled">@GetActionButtonLabel()</Button>
                         }
                     </ModalFooter>
                 </Authorized>
@@ -123,7 +123,7 @@
                     <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
                     @if (actionComponent != null)
                     {
-                        <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing" Disabled="@isSubmitDisabled">@ActionButtonLabel</Button>
+                        <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing" Disabled="@isSubmitDisabled">@GetActionButtonLabel()</Button>
                     }
                 }
                 

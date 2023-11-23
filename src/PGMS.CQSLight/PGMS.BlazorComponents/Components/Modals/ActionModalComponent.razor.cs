@@ -104,7 +104,7 @@ namespace PGMS.BlazorComponents.Components.Modals
         public async Task Show()
         {
             //Allow to refresh the dynamic component to SetParameters
-			StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             actionProcessing = false;
 
@@ -139,6 +139,16 @@ namespace PGMS.BlazorComponents.Components.Modals
             {
                 await OnCloseModal.InvokeAsync();
             }
+        }
+
+        private string GetActionButtonLabel()
+        {
+            if (string.IsNullOrEmpty(actionComponent.ActionButtonLabel()) == false)
+            {
+                return actionComponent.ActionButtonLabel();
+            }
+
+            return ActionButtonLabel;
         }
     }
 }

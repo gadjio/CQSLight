@@ -7,11 +7,13 @@ public class FakeBus : IBus
 {
 	public List<IEvent> PublishedEvents { get; private set; }
 	public List<ICommand> PublishedCommands { get; private set; }
+	public List<KeyValuePair<ICommand, IContextInfo>> PublishedCommandsMap { get; private set; }
 
 	public FakeBus()
 	{
 		PublishedEvents = new List<IEvent>();
 		PublishedCommands = new List<ICommand>();
+		PublishedCommandsMap = new List<KeyValuePair<ICommand, IContextInfo>>();
 	}
 
 	public Task Publish<T>(T @event) where T : class, IEvent
@@ -29,6 +31,7 @@ public class FakeBus : IBus
 	public Task Send(ICommand command, IContextInfo contextInfo)
 	{
 		PublishedCommands.Add(command);
+		PublishedCommandsMap.Add(new KeyValuePair<ICommand, IContextInfo>(command, contextInfo));
 		return Task.CompletedTask;
 	}
 }

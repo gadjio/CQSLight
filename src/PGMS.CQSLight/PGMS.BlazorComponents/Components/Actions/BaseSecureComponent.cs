@@ -10,11 +10,11 @@ namespace PGMS.BlazorComponents.Components.Actions
 {
     public class BaseSecureComponent : BaseComponent
     {
-        [Inject] private CommandHelper CommandHelper { get; set; }
+        [Inject] protected CommandHelper CommandHelper { get; set; }
         [Inject] protected QueryHelper QueryHelper { get; set; }
-        [Inject] private IDataService DataService { get; set; }
-        [Inject] private IErrorHandlerService ErrorHandlerService { get; set; }
-        [Inject] private ISessionInfoProvider SessionInfoProvider { get; set; }
+        [Inject] protected IDataService DataService { get; set; }
+        [Inject] protected IErrorHandlerService ErrorHandlerService { get; set; }
+        [Inject] protected ISessionInfoProvider SessionInfoProvider { get; set; }
 
         protected bool Loading = true;
 
@@ -47,7 +47,7 @@ namespace PGMS.BlazorComponents.Components.Actions
             await Task.Delay(1);
         }
 
-        protected async Task<SendCommandResult> SendCommand(ICommand command)
+        protected virtual async Task<SendCommandResult> SendCommand(ICommand command)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace PGMS.BlazorComponents.Components.Actions
 
             
             }
-            return await Task.FromResult(new SendCommandResult { IsSuccess = true });
+            return new SendCommandResult { IsSuccess = true };
         }
 
         protected virtual ContextInfo GetContextInfo()
@@ -86,7 +86,7 @@ namespace PGMS.BlazorComponents.Components.Actions
         {
             try
             {
-                await CommandHelper.Send(commands, SessionInfoProvider.GetContextInfo());
+                await CommandHelper.Send(commands, GetContextInfo());
             }
             catch (DomainValidationException e)
             {

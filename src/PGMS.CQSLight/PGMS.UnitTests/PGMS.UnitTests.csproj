@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PGMS.BlazorComponents\PGMS.BlazorComponents.csproj" />
     <ProjectReference Include="..\PGMS.CQSLight.UnitTestUtilities\PGMS.CQSLight.UnitTestUtilities.csproj" />
     <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />
     <ProjectReference Include="..\PGMS.DataProvider.EFCore\PGMS.DataProvider.EFCore.csproj" />
