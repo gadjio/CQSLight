@@ -12,6 +12,8 @@ namespace PGMS.Data.Services
         bool IsAutoFlush();
         void Save();
         Task SaveAsync();
+
+        bool KeepAlive { get; set; }
     }
 
     public interface IUnitOfWorkTransaction : IDisposable, IAsyncDisposable

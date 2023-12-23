@@ -680,8 +680,9 @@ namespace PGMS.DataProvider.EFCore.Services
         protected string ConnectionsString { get; set; }
         private readonly ContextFactory<T> factory;
 
+        protected IUnitOfWork currentUnitOfWork;
 
-        public BaseEntityRepository(IConnectionStringProvider connectionStringProvider, ContextFactory<T> factory)
+		public BaseEntityRepository(IConnectionStringProvider connectionStringProvider, ContextFactory<T> factory)
         {
 	        ConnectionsString = connectionStringProvider.GetConnectionString();
             this.factory = factory;            
@@ -689,11 +690,21 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public async Task<IUnitOfWork> GetUnitOfWorkAsync(bool autoFlush = true)
         {
-            return await UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
+	        if (currentUnitOfWork != null)
+	        {
+		        return currentUnitOfWork;
+	        }
+
+			return await UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
         }
 
         public IUnitOfWork GetUnitOfWork(bool autoFlush = true)
         {
+	        if (currentUnitOfWork != null)
+	        {
+                return currentUnitOfWork;
+	        }
+
             var task = UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
             task.Wait();
             return task.Result;
@@ -702,6 +713,11 @@ namespace PGMS.DataProvider.EFCore.Services
         public string GetConnectionString()
         {
             return ConnectionsString;
+        }
+
+        public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
+        {
+	        currentUnitOfWork = unitOfWork;
         }
 
         public virtual IList<TEntity> GetListWithRawSql<TEntity>(string query, params object[] parameters) where TEntity : class

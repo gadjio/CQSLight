@@ -8,8 +8,14 @@ namespace PGMS.DataProvider.EFCore.Services
 {
     public class UnitOfWork<T> : IUnitOfWork where T : DbContext, IDbContext
     {
-        private readonly bool autoFlush;
+        /// <summary>
+        /// Once set to keep alive you will need to remove the keep alive to be able to dispose
+        /// </summary>
+		public bool KeepAlive { get; set; }
+
+		private readonly bool autoFlush;
         private T context;
+
 
         public UnitOfWork(string connectionString, T context, bool autoFlush)
         {
@@ -56,12 +62,18 @@ namespace PGMS.DataProvider.EFCore.Services
 
         public void Dispose()
         {
-            context.Dispose();
+	        if (!KeepAlive)
+	        {
+		        context.Dispose();
+	        }
         }
 
         public async ValueTask DisposeAsync()
         {
-	        await context.DisposeAsync();
+	        if (!KeepAlive)
+	        {
+		        await context.DisposeAsync();
+	        }
         }
 
         public IUnitOfWorkTransaction GetTransaction()
@@ -93,6 +105,8 @@ namespace PGMS.DataProvider.EFCore.Services
         {
 	        await context.SaveChangesAsync();
         }
+
+        
     }
 
     public class DbTransaction : IUnitOfWorkTransaction

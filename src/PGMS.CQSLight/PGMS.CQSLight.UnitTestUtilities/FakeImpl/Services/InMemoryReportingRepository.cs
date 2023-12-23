@@ -14,6 +14,11 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 	{
 		private IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
 
+		public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
+		{
+			throw new NotImplementedException();
+		}
+
 		public IList<TEntity> GetListWithRawSql<TEntity>(string query, params object[] parameters) where TEntity : class
 		{
 			throw new NotImplementedException("GetListWithRawSql is not implemented in InMemoryReportingRepository");

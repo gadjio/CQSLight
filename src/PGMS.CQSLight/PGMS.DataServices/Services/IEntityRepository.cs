@@ -12,7 +12,9 @@ namespace PGMS.Data.Services
 	}
 
 	public interface IEntityRepository :  IScopedEntityRepository, IUnitOfWorkProvider
-    {
+	{
+		void SetCurrentUnitOfWork(IUnitOfWork unitOfWork);
+
         IList<TEntity> GetListWithRawSql<TEntity>(string query, params object[] parameters) where TEntity : class;
         Task<List<TEntity>> GetListWithRawSqlAsync<TEntity>(string query, params object[] parameters) where TEntity : class;
 

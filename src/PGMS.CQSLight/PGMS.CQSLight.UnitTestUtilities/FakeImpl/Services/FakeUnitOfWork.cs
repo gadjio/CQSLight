@@ -4,6 +4,8 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 {
 	public class FakeUnitOfWork : IUnitOfWork
 	{
+		public bool KeepAlive { get; set; }
+
 		public void Dispose()
 		{
 		}
