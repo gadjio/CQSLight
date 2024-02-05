@@ -43,7 +43,7 @@ public class SetCurrentUnitOfWorkFixture
 		entityRepository.InsertOperation(unitOfWork, new LocationReporting { AggregateRootId = aggregateRootId, Name = "UnitTests" });
 
 		var result = entityRepository.FindFirst<LocationReporting>(x => x.AggregateRootId == aggregateRootId);
-		Assert.IsNotNull(result);
+		Assert.That(result, Is.Not.Null);
 	}
 
 	[Test]
@@ -56,8 +56,8 @@ public class SetCurrentUnitOfWorkFixture
 		var result2 = entityRepository.FindFirst<LocationReporting>(x => x.AggregateRootId == aggregateRootId);
 		var result3 = entityRepository.FindFirst<LocationReporting>(x => x.AggregateRootId == aggregateRootId);
 
-		Assert.IsNotNull(result1);
-		Assert.IsNotNull(result2);
-		Assert.IsNotNull(result3);
-	}
+		Assert.That(result1, Is.Not.Null);
+        Assert.That(result2, Is.Not.Null);
+        Assert.That(result3, Is.Not.Null);
+    }
 }

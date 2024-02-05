@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using PGMS.CQSLight.Extensions;
@@ -99,7 +101,40 @@ namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.UnitOfWorkFixtures
 			Assert.That(result.intval, Is.EqualTo(1));
 		}
 
-		[Test]
+        [Test]
+        public async Task CheckTransactionUpdatedItemAsync()
+        {
+            var id = DateTime.Now.ToEpoch();
+            var idParametres = $"IntegratedTest-update-{id}";
+
+            entityRepository.Insert(new DbSequenceHiLo { id_parametres = idParametres, intval = 1 });
+
+            using (var unitOfWork = entityRepository.GetUnitOfWork())
+            {
+                using (var transaction = unitOfWork.GetTransaction())
+                {
+                    var value = await entityRepository.FindFirstOperationAsync<DbSequenceHiLo>(unitOfWork, x => x.id_parametres == idParametres);
+                    value.intval = 100;
+                    await entityRepository.UpdateOperationAsync(unitOfWork, value);
+
+                    var updated = await entityRepository.FindFirstOperationAsync<DbSequenceHiLo>(unitOfWork, x => x.id_parametres == idParametres);
+                    Assert.That(updated.intval, Is.EqualTo(100));
+
+                    var findAll = await entityRepository.FindAllOperationAsync<DbSequenceHiLo>(unitOfWork);
+                    var updatedFromFindAll = findAll.First(x => x.Id == updated.Id);
+					Assert.That(updatedFromFindAll.intval, Is.EqualTo(100));
+
+                    await transaction.RollbackAsync();
+                }
+            }
+
+
+            var result = entityRepository.FindFirst<DbSequenceHiLo>(x => x.id_parametres == idParametres);
+
+            Assert.That(result.intval, Is.EqualTo(1));
+        }
+
+        [Test]
 		public void CheckTransactionUpdatedItemPersisted()
 		{
 			var id = DateTime.Now.ToEpoch();

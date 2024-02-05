@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
     <Description>Blazor Component to use with CQSLight</Description>
     <Company>PGMS</Company>
-    <Version>3.2.0.7</Version>
+    <Version>4.2.0.8-preview2</Version>
     <Authors>PGMS</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
@@ -27,11 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.2.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.11" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.16" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="7.0.4" />
+    <PackageReference Include="Blazorise" Version="1.4.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>

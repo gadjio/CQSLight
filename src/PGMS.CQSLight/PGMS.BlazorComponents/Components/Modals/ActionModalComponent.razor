@@ -120,7 +120,10 @@
                 }
                 else
                 {
-                    <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                    @if (ShowCancelButton)
+                    {
+                        <Button Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                    }
                     @if (actionComponent != null)
                     {
                         <Button class="btn btndata" Clicked="@ProcessAction" Loading="@actionProcessing" Disabled="@isSubmitDisabled">@GetActionButtonLabel()</Button>
