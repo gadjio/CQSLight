@@ -26,6 +26,9 @@ namespace PGMS.BlazorComponents.Components.Modals
         public string ActionButtonLabel { get; set; }
 
         [Parameter]
+        public bool ShowCancelButton { get; set; } = true;
+
+        [Parameter]
         public EventCallback OnActionCompleted { get; set; }
 
         [Parameter]

@@ -19,7 +19,10 @@ public partial class ActionSidePanelComponent<TActionItem> : ComponentBase, IAct
 	[Parameter]
 	public string ActionButtonLabel { get; set; }
 
-	[Parameter]
+    [Parameter]
+    public bool ShowCancelButton { get; set; } = true;
+
+    [Parameter]
 	public EventCallback OnActionCompleted { get; set; }
 
     [Parameter] 

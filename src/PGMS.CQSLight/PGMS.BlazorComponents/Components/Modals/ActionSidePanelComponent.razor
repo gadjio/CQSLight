@@ -108,7 +108,10 @@
                         {
                             <Button class="action-btn-primary" Clicked="@ProcessAction" Loading="@actionProcessing">@ActionButtonLabel</Button>
                         }
-                        <Button class="action-btn-primary" Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                        @if (ShowCancelButton)
+                        {
+                            <Button class="action-btn-primary" Clicked="@(HideModal)">@localizer["Cancel"]</Button>
+                        }
                     </div>
 
                 </div>
