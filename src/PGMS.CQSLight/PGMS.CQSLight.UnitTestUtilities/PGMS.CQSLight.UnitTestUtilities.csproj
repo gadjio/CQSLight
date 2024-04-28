@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>4.2.0.8-preview2</Version>
+    <Version>4.2.0.8</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
