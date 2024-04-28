@@ -58,4 +58,12 @@ public class FindFirstAsyncFixture
         task.Wait();
         Assert.That(task.Result, Is.Not.Null);
     }
+
+    [Test]
+    public void FindAll()
+    {
+        var task = entityRepository.FindAllAsync<LogEntryReporting>(x => x.PersonId == QADataProvider.CreedBrattonId);
+        task.Wait();
+        Assert.That(task.Result, Is.Not.Null);
+    }
 }
