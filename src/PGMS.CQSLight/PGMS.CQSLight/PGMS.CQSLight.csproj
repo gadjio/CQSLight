@@ -8,8 +8,7 @@
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <Description>CQS Light framework with DirectBus</Description>
-    <Version>4.2.0.8</Version>
-    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+	  <Version>$(PgmsVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>

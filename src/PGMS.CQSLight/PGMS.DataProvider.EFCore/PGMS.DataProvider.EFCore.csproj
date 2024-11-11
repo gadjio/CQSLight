@@ -7,9 +7,9 @@
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <Description>Repository pattern with EFCore</Description>
-    <Version>4.2.0.8</Version>
-    <AssemblyVersion>2.0.1.0</AssemblyVersion>
-    <FileVersion>2.0.1.0</FileVersion>
+	  <Version>$(PgmsVersion)</Version>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

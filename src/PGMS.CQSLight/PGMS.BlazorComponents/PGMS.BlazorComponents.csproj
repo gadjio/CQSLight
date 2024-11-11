@@ -8,9 +8,11 @@
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
     <Description>Blazor Component to use with CQSLight</Description>
     <Company>PGMS</Company>
-    <Version>4.2.0.8</Version>
+    <Version>$(PgmsVersion)</Version>
     <Authors>PGMS</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
