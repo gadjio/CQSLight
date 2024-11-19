@@ -29,11 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.5.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="8.0.4" />
+    <PackageReference Include="Blazorise" Version="1.6.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
   </ItemGroup>
 
   <ItemGroup>

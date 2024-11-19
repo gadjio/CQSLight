@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using PGMS.CQSLight.Extensions;
 using PGMS.Data.Services;
@@ -65,5 +66,25 @@ public class FindFirstAsyncFixture
         var task = entityRepository.FindAllAsync<LogEntryReporting>(x => x.PersonId == QADataProvider.CreedBrattonId);
         task.Wait();
         Assert.That(task.Result, Is.Not.Null);
+    }
+
+
+    [Test]
+    public async Task FindAllAndUpdate()
+    {
+        var result = await entityRepository.FindAllAsync<LogEntryReporting>(x => x.UnixTimeStampMs >= unixTimeStampMs);
+        Assert.That(result.Count, Is.EqualTo(3));
+
+        foreach (var logEntryReporting in result)
+        {
+            logEntryReporting.UnixTimeStampMs = unixTimeStampMs -1;
+            await entityRepository.UpdateAsync(logEntryReporting);
+        }
+
+        var reread = await entityRepository.FindAllAsync<LogEntryReporting>(x => x.UnixTimeStampMs >= unixTimeStampMs);
+        Assert.That(reread.Count, Is.EqualTo(0));
+
+        var rereadOk = await entityRepository.FindAllAsync<LogEntryReporting>(x => x.UnixTimeStampMs >= unixTimeStampMs - 1);
+        Assert.That(rereadOk.Count, Is.EqualTo(3));
     }
 }
