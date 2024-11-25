@@ -27,7 +27,7 @@ namespace PGMS.DataProvider.EFCore.Services
         public IQueryable<TEntity> GetQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null)
            where TEntity : class
         {
-            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>().AsNoTracking(); ;
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
             IQueryable<TEntity> query = dbSet;
 
 
@@ -277,7 +277,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
         private IQueryable<TEntity> GetOperationQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter) where TEntity : class
         {
-            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>().AsNoTracking();
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
             IQueryable<TEntity> query = dbSet;
 
 
@@ -369,7 +369,7 @@ namespace PGMS.DataProvider.EFCore.Services
 
         private IQueryable<TEntity> GetFindFirstOperationQuery<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter) where TEntity : class
         {
-            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>().AsNoTracking();
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
             IQueryable<TEntity> query = dbSet;
 
             if (HasLazyLoading(typeof(TEntity)) || IsLazyLoading(typeof(TEntity)))
