@@ -1,5 +1,7 @@
 ﻿using PGMS.CQSLight.Infra.Commands;
 using PGMS.CQSLight.Infra.Commands.Services;
+using PGMS.CQSLight.Infra.Querying;
+using PGMS.CQSLight.Infra.Querying.Services;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services;
 
@@ -34,4 +36,27 @@ public class FakeBus : IBus
 		PublishedCommandsMap.Add(new KeyValuePair<ICommand, IContextInfo>(command, contextInfo));
 		return Task.CompletedTask;
 	}
+}
+
+public class FakeQueryProcessor : IQueryProcessor
+{
+    public TResult Process<TResult>(IQuery<TResult> query)
+    {
+        throw new NotImplementedException();
+    }
+
+    public TResult ProcessWithCaching<TResult>(IQuery<TResult> query, int cacheDurationInSeconds)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<TResult> ProcessAsync<TResult>(IQuery<TResult> query)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<TResult> ProcessWithCachingAsync<TResult>(IQuery<TResult> query, int cacheDurationInSeconds)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -11,8 +11,11 @@ namespace PGMS.BlazorComponents.Components.Modals
         Task Show();
     }
 
+
     public partial class ActionModalComponent<TActionItem> : ComponentBase, IActionComponent where TActionItem : BaseCqsActionComponent
 	{
+        [Inject] public BlazorComponentsOptions BlazorComponentsOptions { get; set; }
+
         [Parameter]
 		public Dictionary<string, object> ActionParameters { get; set; } = new Dictionary<string, object>();
 
@@ -46,6 +49,12 @@ namespace PGMS.BlazorComponents.Components.Modals
         [Parameter]
         public RenderFragment<List<System.ComponentModel.DataAnnotations.ValidationResult>> ErrorDisplay { get; set; }
 
+        /// <summary>
+        /// Will override the ActionModalSettings.PreventClose settings
+        /// </summary>
+        [Parameter]
+        public bool? PreventClose { get; set; }
+
         protected BaseCqsActionComponent actionComponent;
 
         protected Modal modal;
@@ -56,8 +65,17 @@ namespace PGMS.BlazorComponents.Components.Modals
 
         private bool isSubmitDisabled = false;
 
+        private bool isPreventClose;
+        private bool cancelClose;
+
         protected override async Task OnParametersSetAsync()
         {
+            isPreventClose = BlazorComponentsOptions?.ActionModalSettings?.PreventClose == true;
+            if (PreventClose.HasValue)
+            {
+                isPreventClose = PreventClose.Value;
+            }
+
             Action<BaseCqsActionComponent> p1 = RegisterActionItem;
             ActionParameters.AddOrUpdate(nameof(BaseCqsActionComponent.Register), p1);
 
@@ -106,6 +124,7 @@ namespace PGMS.BlazorComponents.Components.Modals
 
         public async Task Show()
         {
+            cancelClose = true;
             //Allow to refresh the dynamic component to SetParameters
             await InvokeAsync(StateHasChanged);
 
@@ -127,6 +146,7 @@ namespace PGMS.BlazorComponents.Components.Modals
 
         public async Task HideModal()
         {
+            cancelClose = false;
             await modal.Hide();
 
             if (OnCloseModal.HasDelegate)
@@ -138,6 +158,17 @@ namespace PGMS.BlazorComponents.Components.Modals
 
         private async Task OnModalClosing(ModalClosingEventArgs arg)
         {
+            if (isPreventClose)
+            {
+                arg.Cancel = cancelClose
+                           || arg.CloseReason != CloseReason.UserClosing;
+            }
+
+            if (arg.Cancel)
+            {
+                return;
+            }
+
             if (OnCloseModal.HasDelegate)
             {
                 await OnCloseModal.InvokeAsync();

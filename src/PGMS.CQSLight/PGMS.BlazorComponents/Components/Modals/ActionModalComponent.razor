@@ -6,7 +6,7 @@
     <ModalContent Size="@ModalSize">
         <ModalHeader>
             <ModalTitle>@ModalTitle</ModalTitle>
-            <CloseButton/>
+            <CloseButton Clicked="HideModal"/>
         </ModalHeader>
         @if (!string.IsNullOrEmpty(roles))
         {

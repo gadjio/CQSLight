@@ -1,0 +1,26 @@
+﻿@page "/"
+@using TestBlazorApp.Components.Pages.Actions
+
+
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<button onclick="@ShowModal">Show modal</button>
+
+<ActionModalComponent TActionItem="AddItem" @ref="@actionModal"
+ModalTitle="Add Item" />
+
+
+
+@code {
+    private ActionModalComponent<AddItem> actionModal;
+
+    private async Task ShowModal()
+    {
+        await actionModal.Show();
+    }
+}
