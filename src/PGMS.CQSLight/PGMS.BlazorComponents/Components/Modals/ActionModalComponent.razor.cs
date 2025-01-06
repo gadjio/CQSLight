@@ -112,6 +112,7 @@ namespace PGMS.BlazorComponents.Components.Modals
             var actionCompleted = await actionComponent.ProcessAction();
             if (actionCompleted)
             {
+                cancelClose = false;
                 await modal.Hide();
                 if (OnActionCompleted.HasDelegate)
                 {
