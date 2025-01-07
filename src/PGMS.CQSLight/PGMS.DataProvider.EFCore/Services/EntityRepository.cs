@@ -154,7 +154,7 @@ namespace PGMS.DataProvider.EFCore.Services
             where TEntity : class
             where TInner : class
         {
-            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+            var dbSet = ((UnitOfWork<T>) unitOfWork).GetDbSet<TEntity>();
             IQueryable<TEntity> query = dbSet;
 
 

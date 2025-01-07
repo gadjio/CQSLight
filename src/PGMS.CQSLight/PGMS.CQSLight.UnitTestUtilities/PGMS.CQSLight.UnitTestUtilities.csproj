@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>3.2.0.7</Version>
+	  <Version>$(PgmsVersion)</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <PackageProjectUrl>https://github.com/gadjio/CQSLight</PackageProjectUrl>
@@ -13,6 +13,11 @@
 - In Memory EntityRepository</Description>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />

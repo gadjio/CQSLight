@@ -66,7 +66,7 @@ public class CommandFixture
         //Assert
         var reporting = inMemoryEntityRepository.FindFirst<FakeReporting>(x => x.AggregateRootId == command.AggregateRootId);
         Assert.That(reporting, Is.Not.Null);
-        Assert.That(reporting.ByUser, Is.EqualTo("PrimeUser"));
+        Assert.That(reporting.CommandType, Is.EqualTo(typeof(FakeCommand).FullName));
         Assert.That(reporting.ByUsername, Is.EqualTo("PrimeUser"));
         Assert.That(reporting.ByUserId, Is.EqualTo("47"));
         Assert.That(reporting.TimeStamp, Is.GreaterThanOrEqualTo(startTime.ToEpoch()));
@@ -123,7 +123,9 @@ public class FakeDomainEventHandler : BaseEventHandler<FakeDomainEvent>
             AggregateRootId = @event.AggregateId,
             ByUsername = @event.ByUsername,
             ByUserId = @event.ByUserId,
-            ByUser = @event.ByUser,
+
+            CommandType = @event.CommandType,
+
             TimeStamp = @event.Timestamp,
 
             Name = @event.Parameters.Name
@@ -138,7 +140,9 @@ public class FakeReporting
     public string ByUserId { get; set; }
 
     public string Name { get; set; }
-    public string ByUser { get; set; }
+    
+    public string CommandType { get; set; }
+    
     public long TimeStamp { get; set; }
 }
 

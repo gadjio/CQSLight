@@ -11,11 +11,10 @@ namespace PGMS.CQSLight.Infra.Commands
         Guid AggregateId { get; set; }
         Guid Id { get; }
 
-        [Obsolete("Replaced by ByUsername to avoid confusion between UserId and Username")]
-		string ByUser { get; set; }    
-        
         string ByUserId { get; set; }
         string ByUsername { get; set; }
+
+        string CommandType { get; set; }
 	}
 
     public interface IDomainEvent : IEvent
@@ -74,17 +73,12 @@ namespace PGMS.CQSLight.Infra.Commands
 
         public Guid Id { get; private set; }
 
-        [Obsolete("Replaced by ByUsername to avoid confusion between UserId and Username")]
-        public string ByUser
-        {
-            get => ByUsername;
-            set => ByUsername = value;
-        }
-
         public string ByUserId { get; set; }
         public string ByUsername { get; set; }
 
-		public long Timestamp { get; set; }
+        public string CommandType { get; set; }
+
+        public long Timestamp { get; set; }
 
         public Guid AggregateId { get; set; }
 

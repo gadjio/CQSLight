@@ -46,5 +46,6 @@ public abstract class BaseCommandHandler<T> : HandleCommand<T> where T : BaseCom
         @event.ByUsername = contextInfo.ByUsername;
         @event.ByUserId = contextInfo.ByUserId;
         @event.AggregateId = command.AggregateRootId;
+        @event.CommandType = typeof(T).FullName;
     }
 }

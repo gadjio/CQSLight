@@ -61,6 +61,11 @@ public abstract class BaseCommandHandlerMultipleEvents<T> : HandleCommand<T> whe
         {
             @event.AggregateId = command.AggregateRootId;
         }
+
+        if (string.IsNullOrEmpty(@event.CommandType))
+        {
+            @event.CommandType = typeof(T).FullName;
+        }
     }
 
 }
