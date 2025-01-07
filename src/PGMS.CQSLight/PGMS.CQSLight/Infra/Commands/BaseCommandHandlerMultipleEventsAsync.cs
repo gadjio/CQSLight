@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using PGMS.CQSLight.Infra.Commands.Services;
 using PGMS.CQSLight.Infra.Exceptions;
-using PGMS.CQSLight.Infra.Security;
 
 namespace PGMS.CQSLight.Infra.Commands
 {
@@ -59,6 +58,11 @@ namespace PGMS.CQSLight.Infra.Commands
             if (@event.AggregateId == Guid.Empty)
             {
                 @event.AggregateId = command.AggregateRootId;
+            }
+
+            if (string.IsNullOrEmpty(@event.CommandType))
+            {
+                @event.CommandType = typeof(T).FullName;
             }
         }
     }
