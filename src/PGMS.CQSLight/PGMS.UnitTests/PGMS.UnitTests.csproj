@@ -29,6 +29,7 @@
   <ItemGroup>
     <Folder Include="CQSLight\Infra\Commands\HandlerRunningPriorityFixtures\" />
     <Folder Include="CQSLight\Infra\Security\" />
+    <Folder Include="UnitTestUtilities\Services\InMemoryReportingRepositoryFixtures\" />
   </ItemGroup>
 
 </Project>

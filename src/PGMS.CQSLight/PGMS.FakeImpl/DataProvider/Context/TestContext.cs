@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
-using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Contexts;
 
-namespace PGMS.IntegratedTests
+namespace PGMS.FakeImpl.DataProvider.Context
 {
 	public class TestContext : BaseDbContext
 	{
