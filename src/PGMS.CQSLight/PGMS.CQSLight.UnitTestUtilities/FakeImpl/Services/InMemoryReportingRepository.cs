@@ -1,18 +1,190 @@
-﻿using System.Data.Common;
-using System.Linq.Expressions;
+﻿using System.Collections;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Services;
+using PGMS.DataProvider.EFCore.Contexts;
+using System.Data.Common;
+using System.Linq.Expressions;
+using System.Reflection;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 {
-	public class InMemoryReportingRepository : InMemoryEntityRepository
+    public class InMemoryReportingRepository<TContext> : InMemoryEntityRepository, IEntityRepository where TContext : DbContext
+    {
+        private readonly TContext dbContext;
+
+        public InMemoryReportingRepository(TContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
+        public override IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
+        {
+            var result = base.GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
+
+            ResolveNavigationProperties<TEntity>(result.ToList());
+
+            return result;
+        }
+
+        private void ResolveNavigationProperties<TEntity>(List<TEntity> entities) where TEntity : class
+        {
+            var entityType = dbContext.Model.FindEntityType(typeof(TEntity));
+            if (entityType == null)
+                return;
+
+            foreach (var navigation in entityType.GetNavigations())
+            {
+                var navigationProperty = typeof(TEntity).GetProperty(navigation.Name);
+                if (navigationProperty == null)
+                    continue;
+
+                var relatedEntityType = navigation.TargetEntityType.ClrType;
+
+                if (navigation.IsCollection)
+                {
+                    // Relation HasMany
+                    var foreignKey = navigation.ForeignKey.Properties.FirstOrDefault();
+                    if (foreignKey == null) continue;
+
+                    var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
+
+                    foreach (var entity in entities)
+                    {
+                        var entityKeyValue = primaryKey.PropertyInfo?.GetValue(entity);
+                        if (entityKeyValue == null) continue;
+
+                        var relatedEntities = inMemoryMap.ContainsKey(relatedEntityType)
+                            ? inMemoryMap[relatedEntityType]
+                                .Cast<object>()
+                                .Where(e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false)
+                                .ToList()
+                            : new List<object>();
+
+                        var listType = typeof(List<>).MakeGenericType(relatedEntityType);
+                        var typedList = Activator.CreateInstance(listType) as IList;
+
+                        foreach (var item in relatedEntities)
+                        {
+                            typedList?.Add(item);
+                        }
+
+                        navigationProperty.SetValue(entity, typedList);
+
+                        //navigationProperty.SetValue(entity, relatedEntities);
+                    }
+                }
+                else
+                {
+                    // Relation HasOne
+                    var foreignKey = navigation.ForeignKey.Properties.FirstOrDefault();
+                    if (foreignKey == null) continue;
+
+                    foreach (var entity in entities)
+                    {
+                        var foreignKeyValue = foreignKey.PropertyInfo?.GetValue(entity);
+                        if (foreignKeyValue == null) continue;
+
+                        
+						var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
+                        //var primaryKey = navigation.TargetEntityType.FindPrimaryKey()?.Properties.FirstOrDefault();
+
+                        if (primaryKey != null)
+                        {
+                            var list = inMemoryMap[relatedEntityType];
+                            var item = list.First();
+                            var val = primaryKey.PropertyInfo?.GetValue(item);
+
+
+                            var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
+                                ? inMemoryMap[relatedEntityType]
+                                    .Cast<object>()
+                                    .FirstOrDefault(e => primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false)
+                                : null;
+
+                            navigationProperty.SetValue(entity, relatedEntity);
+                        }
+
+                        //var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
+                        //    ? inMemoryMap[relatedEntityType]
+                        //        .Cast<object>()
+                        //        .FirstOrDefault(e => foreignKey.TargetEntityType.FindPrimaryKey().Properties
+                        //            .All(pk => pk.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false))
+                        //    : null;
+
+                        //navigationProperty.SetValue(entity, relatedEntity);
+                    }
+                }
+            }
+        }
+
+        //private void ResolveNavigationProperties<TEntity>(List<TEntity> entities) where TEntity : class
+        //{
+        //    var entityType = typeof(TEntity);
+        //    var navigationProperties = entityType.GetProperties()
+        //        .Where(p => p.PropertyType.IsClass || (p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>)));
+
+        //    foreach (var entity in entities)
+        //    {
+        //        foreach (var property in navigationProperties)
+        //        {
+        //            if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>))
+        //            {
+        //                // Relation HasMany
+        //                var relatedEntityType = property.PropertyType.GetGenericArguments()[0];
+        //                var foreignKeyProperty = FindForeignKey(entityType, relatedEntityType);
+
+        //                if (foreignKeyProperty != null)
+        //                {
+        //                    var relatedEntities = inMemoryMap.ContainsKey(relatedEntityType)
+        //                        ? inMemoryMap[relatedEntityType]
+        //                            .Cast<object>()
+        //                            .Where(e => foreignKeyProperty.GetValue(e)?.Equals(entity) ?? false)
+        //                            .ToList()
+        //                        : new List<object>();
+
+        //                    property.SetValue(entity, relatedEntities);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                // Relation HasOne
+        //                var relatedEntityType = property.PropertyType;
+        //                var foreignKeyProperty = FindForeignKey(relatedEntityType, entityType);
+
+        //                if (foreignKeyProperty != null)
+        //                {
+        //                    var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
+        //                        ? inMemoryMap[relatedEntityType]
+        //                            .Cast<object>()
+        //                            .FirstOrDefault(e => foreignKeyProperty.GetValue(entity)?.Equals(e) ?? false)
+        //                        : null;
+
+        //                    property.SetValue(entity, relatedEntity);
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        //private PropertyInfo FindForeignKey(Type entityType, Type relatedEntityType)
+        //{
+        //    return entityType.GetProperties()
+        //        .FirstOrDefault(p => p.PropertyType == relatedEntityType ||
+        //                             (p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>) &&
+        //                              p.PropertyType.GetGenericArguments()[0] == relatedEntityType));
+        //}
+    }
+
+    public class InMemoryReportingRepository : InMemoryEntityRepository
 	{
 
 	}
 
 	public class InMemoryEntityRepository : IEntityRepository
 	{
-		private IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
+		protected IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
 
 		public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
 		{
@@ -176,7 +348,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 		}
 
 
-		public IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork,
+		public virtual IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork,
 			Expression<Func<TEntity, bool>> filter = null,
 			Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200,
 			int offset = 0) where TEntity : class
