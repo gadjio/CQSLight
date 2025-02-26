@@ -17,6 +17,7 @@ public class ScenarioTestDataValidation : IScenarioTestAction
         validation.Invoke(scenarioTestHelper.GetEntityRepository());
     }
 
+
     public string GetDescription()
     {
         return "Scenario Test Validation";

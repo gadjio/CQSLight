@@ -8,7 +8,7 @@ public abstract class BaseScenarioTest
 {
     protected abstract IScenarioTestHelper ScenarioTestHelper { get; }
     public abstract List<IScenarioTestAction> Givens();
-    public abstract List<Tuple<string, IScenarioTestAction>> GetActions();
+    public abstract IEnumerable<Tuple<string, IScenarioTestAction>> GetActions();
 
     [OneTimeSetUp]
     public void OneTimeSetup()
@@ -28,11 +28,13 @@ public abstract class BaseScenarioTest
         Console.WriteLine("");
     }
 
+
     [Test, Order(1)]
     public void RunScenarioTest()
     {
         Console.WriteLine("Actions");
         var step = 1;
+        
         foreach (var tuple in GetActions())
         {
             var start = DateTime.Now;

@@ -17,8 +17,10 @@ public class ScenarioTestQuery<T, TQueryResult> : IScenarioTestAction where T : 
     public void Run(IScenarioTestHelper scenarioTestHelper)
     {
         var result = scenarioTestHelper.ProcessQuery(Query);
-        validation.Invoke(result);
+        validation?.Invoke(result);
     }
+
+   
 
     public string GetDescription()
     {

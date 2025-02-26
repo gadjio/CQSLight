@@ -22,3 +22,24 @@ public class ScenarioTestDataManipulation : IScenarioTestAction
         return "Scenario Test Data Manipulation";
     }
 }
+
+public class ScenarioTestLocalDataManipulation : IScenarioTestAction
+{
+    private readonly Action manipulation;
+
+    public ScenarioTestLocalDataManipulation(Action manipulation)
+    {
+        this.manipulation = manipulation;
+    }
+
+    public void Run(IScenarioTestHelper scenarioTestHelper)
+    {
+        manipulation.Invoke();
+    }
+
+
+    public string GetDescription()
+    {
+        return "Scenario Test Local Data Manipulation";
+    }
+}
