@@ -119,62 +119,6 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
             }
         }
 
-        //private void ResolveNavigationProperties<TEntity>(List<TEntity> entities) where TEntity : class
-        //{
-        //    var entityType = typeof(TEntity);
-        //    var navigationProperties = entityType.GetProperties()
-        //        .Where(p => p.PropertyType.IsClass || (p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>)));
-
-        //    foreach (var entity in entities)
-        //    {
-        //        foreach (var property in navigationProperties)
-        //        {
-        //            if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>))
-        //            {
-        //                // Relation HasMany
-        //                var relatedEntityType = property.PropertyType.GetGenericArguments()[0];
-        //                var foreignKeyProperty = FindForeignKey(entityType, relatedEntityType);
-
-        //                if (foreignKeyProperty != null)
-        //                {
-        //                    var relatedEntities = inMemoryMap.ContainsKey(relatedEntityType)
-        //                        ? inMemoryMap[relatedEntityType]
-        //                            .Cast<object>()
-        //                            .Where(e => foreignKeyProperty.GetValue(e)?.Equals(entity) ?? false)
-        //                            .ToList()
-        //                        : new List<object>();
-
-        //                    property.SetValue(entity, relatedEntities);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                // Relation HasOne
-        //                var relatedEntityType = property.PropertyType;
-        //                var foreignKeyProperty = FindForeignKey(relatedEntityType, entityType);
-
-        //                if (foreignKeyProperty != null)
-        //                {
-        //                    var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
-        //                        ? inMemoryMap[relatedEntityType]
-        //                            .Cast<object>()
-        //                            .FirstOrDefault(e => foreignKeyProperty.GetValue(entity)?.Equals(e) ?? false)
-        //                        : null;
-
-        //                    property.SetValue(entity, relatedEntity);
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
-
-        //private PropertyInfo FindForeignKey(Type entityType, Type relatedEntityType)
-        //{
-        //    return entityType.GetProperties()
-        //        .FirstOrDefault(p => p.PropertyType == relatedEntityType ||
-        //                             (p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(ICollection<>) &&
-        //                              p.PropertyType.GetGenericArguments()[0] == relatedEntityType));
-        //}
     }
 
     public class InMemoryReportingRepository : InMemoryEntityRepository

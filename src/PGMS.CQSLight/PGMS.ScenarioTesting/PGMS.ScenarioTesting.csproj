@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PGMS.CQSLight.UnitTestUtilities\PGMS.CQSLight.UnitTestUtilities.csproj" />
+  </ItemGroup>
+
 </Project>

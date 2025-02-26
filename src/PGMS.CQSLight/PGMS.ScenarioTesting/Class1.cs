@@ -1,7 +1,4 @@
-﻿namespace PGMS.ScenarioTesting
-{
-    public class Class1
-    {
+﻿using PGMS.ScenarioTesting.ScenarioTestHelpers;
 
-    }
-}
+namespace PGMS.ScenarioTesting;
+
