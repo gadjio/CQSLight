@@ -1,8 +1,9 @@
 <Project>
 	<PropertyGroup>
-		<PgmsVersion>4.2.11.4</PgmsVersion>
+		<PgmsVersion>4.2.11.5</PgmsVersion>
 		<Version>$(PgmsVersion)</Version>
 		<AssemblyVersion>$(PgmsVersion)</AssemblyVersion>
 		<FileVersion>$(PgmsVersion)</FileVersion>
+		<PackageVersion>$(Version)</PackageVersion>
 	</PropertyGroup>
 </Project>

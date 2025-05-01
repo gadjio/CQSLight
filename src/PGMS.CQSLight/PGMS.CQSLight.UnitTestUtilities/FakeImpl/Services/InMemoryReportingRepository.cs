@@ -1,12 +1,9 @@
-﻿using System.Collections;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Services;
-using PGMS.DataProvider.EFCore.Contexts;
+using System.Collections;
 using System.Data.Common;
 using System.Linq.Expressions;
-using System.Reflection;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 {
@@ -17,6 +14,36 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
         public InMemoryReportingRepository(TContext dbContext)
         {
             this.dbContext = dbContext;
+        }
+
+        protected virtual IList? GetTypedList(Type relatedEntityType, Func<object, bool> predicate)
+        {
+            var relatedEntities = InMemoryMapContainsKey(relatedEntityType)
+                ? InMemoryMapGetList(relatedEntityType)
+                    .Cast<object>()
+                    .Where(predicate)
+                    .ToList()
+                : new List<object>();
+
+            var listType = typeof(List<>).MakeGenericType(relatedEntityType);
+            var typedList = Activator.CreateInstance(listType) as IList;
+
+            foreach (var item in relatedEntities)
+            {
+                typedList?.Add(item);
+            }
+
+            return typedList;
+        }
+
+        protected virtual object? GetItemFromMemoryMap(Type relatedEntityType, Func<object, bool> predicate)
+        {
+            var relatedEntity = InMemoryMapContainsKey(relatedEntityType)
+                ? InMemoryMapGetList(relatedEntityType)
+                    .Cast<object>()
+                    .FirstOrDefault(predicate)
+                : null;
+            return relatedEntity;
         }
 
         public override IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
@@ -55,20 +82,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
                         var entityKeyValue = primaryKey.PropertyInfo?.GetValue(entity);
                         if (entityKeyValue == null) continue;
 
-                        var relatedEntities = inMemoryMap.ContainsKey(relatedEntityType)
-                            ? inMemoryMap[relatedEntityType]
-                                .Cast<object>()
-                                .Where(e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false)
-                                .ToList()
-                            : new List<object>();
-
-                        var listType = typeof(List<>).MakeGenericType(relatedEntityType);
-                        var typedList = Activator.CreateInstance(listType) as IList;
-
-                        foreach (var item in relatedEntities)
-                        {
-                            typedList?.Add(item);
-                        }
+                        var typedList = GetTypedList(relatedEntityType, e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false);
 
                         navigationProperty.SetValue(entity, typedList);
 
@@ -92,33 +106,19 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 
                         if (primaryKey != null)
                         {
-                            var list = inMemoryMap[relatedEntityType];
-                            var item = list.First();
-                            var val = primaryKey.PropertyInfo?.GetValue(item);
-
-
-                            var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
-                                ? inMemoryMap[relatedEntityType]
-                                    .Cast<object>()
-                                    .FirstOrDefault(e => primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false)
-                                : null;
+                            Func<object, bool> predicate = e => primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false;
+                            
+                            var relatedEntity = GetItemFromMemoryMap(relatedEntityType, predicate);
 
                             navigationProperty.SetValue(entity, relatedEntity);
                         }
 
-                        //var relatedEntity = inMemoryMap.ContainsKey(relatedEntityType)
-                        //    ? inMemoryMap[relatedEntityType]
-                        //        .Cast<object>()
-                        //        .FirstOrDefault(e => foreignKey.TargetEntityType.FindPrimaryKey().Properties
-                        //            .All(pk => pk.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false))
-                        //    : null;
-
-                        //navigationProperty.SetValue(entity, relatedEntity);
                     }
                 }
             }
         }
 
+        
     }
 
     public class InMemoryReportingRepository : InMemoryEntityRepository
@@ -128,9 +128,26 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 
 	public class InMemoryEntityRepository : IEntityRepository
 	{
-		protected IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
+		protected IDictionary<Type, List<object>> inMemoryMap2 = new Dictionary<Type, List<object>>();
 
-		public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
+        protected virtual bool InMemoryMapContainsKey(Type type)
+        {
+            return inMemoryMap2.ContainsKey(type);
+        }
+
+        protected virtual List<object> InMemoryMapGetList(Type type)
+        {
+            return inMemoryMap2[type];
+        }
+
+        protected virtual void InMemoryMapAddType(Type type)
+        {
+            inMemoryMap2.Add(type, new List<object>());
+        }
+
+
+
+        public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
 		{
 			throw new NotImplementedException();
 		}
@@ -298,18 +315,18 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 			int offset = 0) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			if (!inMemoryMap.ContainsKey(key))
+			if (!InMemoryMapContainsKey(key))
 			{
 				return new List<TEntity>();
 			}
 
 			if (filter == null)
 			{
-				return inMemoryMap[key].Cast<TEntity>().ToList();
+				return InMemoryMapGetList(key).Cast<TEntity>().ToList();
 			}
 
 			var query = filter.Compile();
-			return inMemoryMap[key].Cast<TEntity>().Where(query).ToList();
+			return InMemoryMapGetList(key).Cast<TEntity>().Where(query).ToList();
 		}
 
 		public Task<List<TEntity>> GetOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
@@ -354,12 +371,12 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 		public void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			if (!inMemoryMap.ContainsKey(key))
+			if (!InMemoryMapContainsKey(key))
 			{
-				inMemoryMap.Add(key, new List<object>());
+				InMemoryMapAddType(key);
 			}
 
-			inMemoryMap[key].Add(entity);
+            InMemoryMapGetList(key).Add(entity);
 		}
 
 		public Task InsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
@@ -371,19 +388,19 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
         public Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
         {
             var key = typeof(TEntity);
-            if (!inMemoryMap.ContainsKey(key))
+            if (!InMemoryMapContainsKey(key))
             {
-                inMemoryMap.Add(key, new List<object>());
+                InMemoryMapAddType(key);
             }
 
-            inMemoryMap[key].AddRange(entities);
+            InMemoryMapGetList(key).AddRange(entities);
             return Task.CompletedTask;
         }
 
         public void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			inMemoryMap[key].Remove(entityToDelete);
+            InMemoryMapGetList(key).Remove(entityToDelete);
 		}
 
 		public Task DeleteOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
