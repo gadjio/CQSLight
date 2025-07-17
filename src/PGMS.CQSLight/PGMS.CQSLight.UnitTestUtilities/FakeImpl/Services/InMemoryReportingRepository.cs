@@ -1,7 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Services;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq.Expressions;
 
@@ -320,14 +321,23 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 				return new List<TEntity>();
 			}
 
-			if (filter == null)
-			{
-				return InMemoryMapGetList(key).Cast<TEntity>().ToList();
-			}
+            var list = InMemoryMapGetList(key).Cast<TEntity>().AsQueryable();
 
-			var query = filter.Compile();
-			return InMemoryMapGetList(key).Cast<TEntity>().Where(query).ToList();
-		}
+            // Applique le filtre si présent
+            if (filter != null)
+            {
+                list = list.Where(filter);
+            }
+
+            // Applique le tri si présent
+            if (orderBy != null)
+            {
+                list = orderBy(list);
+            }
+
+            // Applique le offset et fetchSize (pagination)
+            return list.Skip(offset).Take(fetchSize).ToList();
+        }
 
 		public Task<List<TEntity>> GetOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
 			int fetchSize = 200, int offset = 0) where TEntity : class
