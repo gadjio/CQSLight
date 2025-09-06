@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PGMS.CQSLight.Infra.Commands;
 using PGMS.CQSLight.Infra.Querying;
 using PGMS.Data.Services;
@@ -43,6 +43,11 @@ public class ScenarioTestHelperIntegratedImplementation<TContext> : IScenarioTes
             entityRepository = new BaseEntityRepository<TContext>(new ConnectionStringProvider(connectionString), contextFactory);
         }
         return entityRepository;
+    }
+
+    public T GetRegisteredService<T>()
+    {
+        throw new NotImplementedException();
     }
 
     public override string ToString() => $"Integrated";

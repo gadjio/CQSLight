@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Internal;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 using PGMS.CQSLight.Infra.Commands;
@@ -14,6 +14,8 @@ public interface IScenarioTestHelper
     void SendCommand(ICommand command, List<string>? roles = null);
     T ProcessQuery<T>(IQuery<T> query);
     IEntityRepository GetEntityRepository();
+
+    T GetRegisteredService<T>();
 }
 
 //public class TypeToRegister

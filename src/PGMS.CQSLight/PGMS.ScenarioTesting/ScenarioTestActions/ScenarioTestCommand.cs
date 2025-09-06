@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using PGMS.CQSLight.Extensions;
 using PGMS.CQSLight.Infra.Commands;
 using PGMS.CQSLight.Infra.Exceptions;
@@ -58,3 +58,4 @@ public class ScenarioTestCommand<T> : IScenarioTestAction where T : ICommand
         return $"{typeof(T).Name} - '{Command.AggregateRootId}'";
     }
 }
+
