@@ -2,7 +2,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PGMS.Data.Services;
 using System.Collections;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq.Expressions;
 
@@ -15,6 +14,13 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
         public InMemoryReportingRepository(TContext dbContext)
         {
             this.dbContext = dbContext;
+        }
+
+        protected override List<object> InMemoryMapGetList(Type type)
+        {
+            var result = base.InMemoryMapGetList(type);
+            ResolveNavigationProperties(type, result.ToList());
+            return result;
         }
 
         protected virtual IList? GetTypedList(Type relatedEntityType, Func<object, bool> predicate)
@@ -51,75 +57,68 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
         {
             var result = base.GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
 
-            ResolveNavigationProperties<TEntity>(result.ToList());
-
             return result;
         }
 
-        private void ResolveNavigationProperties<TEntity>(List<TEntity> entities) where TEntity : class
+        private void ResolveNavigationProperties(Type entityClrType, IList entities)
         {
-            var entityType = dbContext.Model.FindEntityType(typeof(TEntity));
-            if (entityType == null)
-                return;
+            var entityType = dbContext.Model.FindEntityType(entityClrType);
+            if (entityType == null) return;
 
             foreach (var navigation in entityType.GetNavigations())
             {
-                var navigationProperty = typeof(TEntity).GetProperty(navigation.Name);
-                if (navigationProperty == null)
-                    continue;
+                var navigationProperty = entityClrType.GetProperty(navigation.Name);
+                if (navigationProperty == null) continue;
 
                 var relatedEntityType = navigation.TargetEntityType.ClrType;
 
                 if (navigation.IsCollection)
                 {
-                    // Relation HasMany
+                    // HasMany
                     var foreignKey = navigation.ForeignKey.Properties.FirstOrDefault();
                     if (foreignKey == null) continue;
 
                     var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
+                    if (primaryKey == null) continue;
 
                     foreach (var entity in entities)
                     {
                         var entityKeyValue = primaryKey.PropertyInfo?.GetValue(entity);
                         if (entityKeyValue == null) continue;
 
-                        var typedList = GetTypedList(relatedEntityType, e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false);
+                        var typedList = GetTypedList(
+                            relatedEntityType,
+                            e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false
+                        );
 
                         navigationProperty.SetValue(entity, typedList);
-
-                        //navigationProperty.SetValue(entity, relatedEntities);
                     }
                 }
                 else
                 {
-                    // Relation HasOne
+                    // HasOne
                     var foreignKey = navigation.ForeignKey.Properties.FirstOrDefault();
                     if (foreignKey == null) continue;
+
+                    var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
+                    if (primaryKey == null) continue;
 
                     foreach (var entity in entities)
                     {
                         var foreignKeyValue = foreignKey.PropertyInfo?.GetValue(entity);
                         if (foreignKeyValue == null) continue;
 
-                        
-						var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
-                        //var primaryKey = navigation.TargetEntityType.FindPrimaryKey()?.Properties.FirstOrDefault();
+                        Func<object, bool> predicate = e =>
+                            primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false;
 
-                        if (primaryKey != null)
-                        {
-                            Func<object, bool> predicate = e => primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false;
-                            
-                            var relatedEntity = GetItemFromMemoryMap(relatedEntityType, predicate);
-
-                            navigationProperty.SetValue(entity, relatedEntity);
-                        }
-
+                        var relatedEntity = GetItemFromMemoryMap(relatedEntityType, predicate);
+                        navigationProperty.SetValue(entity, relatedEntity);
                     }
                 }
             }
         }
 
-        
+
     }
 
     public class InMemoryReportingRepository : InMemoryEntityRepository
@@ -322,7 +321,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 			}
 
             var list = InMemoryMapGetList(key).Cast<TEntity>().AsQueryable();
-
+			
             // Applique le filtre si présent
             if (filter != null)
             {

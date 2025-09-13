@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services;
@@ -57,5 +57,25 @@ public class ResolveNavigationFixture
 
         Assert.That(result.Id, Is.EqualTo(201));
         Assert.That(result.GameStates[0].Id, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Test_Many_WithOne_Resolve_forFiltering()
+    {
+        var id = Guid.NewGuid();
+        var playerId = Guid.NewGuid();
+        var player = new Player() { Id = 201, AggregateRootId = playerId };
+
+        var gameState = new GameState { Id = 1, GameGridId = id, State = "Active", PlayerId = playerId };
+        var gameGrid = new GameGridReporting { Id = 101, AggregateRootId = id };
+
+        entityRepository.Insert(player);
+        entityRepository.Insert(gameState);
+        entityRepository.Insert(gameGrid);
+
+        //Act
+        var result = entityRepository.FindFirst<GameGridReporting>(x => x.GameStateNavigation.GameGridId == id);
+
+        Assert.That(result.Id, Is.EqualTo(101));
     }
 }
