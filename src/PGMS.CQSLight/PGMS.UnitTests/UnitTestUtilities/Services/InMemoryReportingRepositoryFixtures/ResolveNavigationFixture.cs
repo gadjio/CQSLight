@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services;
@@ -77,5 +78,31 @@ public class ResolveNavigationFixture
         var result = entityRepository.FindFirst<GameGridReporting>(x => x.GameStateNavigation.GameGridId == id);
 
         Assert.That(result.Id, Is.EqualTo(101));
+    }
+
+    [Test]
+    public void Test_ComplexKey()
+    {
+        var org1 = Guid.NewGuid();
+        var org2 = Guid.NewGuid();
+
+        entityRepository.Insert(new DevOpsCommitReporting { Id = 1, CommitId = "Commit-101", OrganizationId = org1});
+        entityRepository.Insert(new DevOpsCommitReporting { Id = 2, CommitId = "Commit-101", OrganizationId = org2});
+
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 101, CommitId = "Commit-101", OrganizationId = org1 });
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 102, CommitId = "Commit-101", OrganizationId = org1 });
+
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 999, CommitId = "Commit-2", OrganizationId = org1 });
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 998, CommitId = "Commit-2", OrganizationId = org1 });
+
+
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 201, CommitId = "Commit-101", OrganizationId = org2 });
+        entityRepository.Insert(new DevOpsCommitDiffReporting() { Id = 202, CommitId = "Commit-101", OrganizationId = org2 });
+
+        var result = entityRepository.FindFirst<DevOpsCommitReporting>(x => x.Id == 1);
+        
+        Assert.That(result.Diffs.Count, Is.EqualTo(2));
+        Assert.That(result.Diffs.Any(x => x.Id == 101));
+        Assert.That(result.Diffs.Any(x => x.Id == 102));
     }
 }
