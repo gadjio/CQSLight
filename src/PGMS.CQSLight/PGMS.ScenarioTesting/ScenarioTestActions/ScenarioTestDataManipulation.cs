@@ -1,4 +1,4 @@
-﻿using PGMS.Data.Services;
+using PGMS.Data.Services;
 using PGMS.ScenarioTesting.ScenarioTestHelpers;
 
 namespace PGMS.ScenarioTesting.ScenarioTestActions;
@@ -12,12 +12,12 @@ public class ScenarioTestDataManipulation : IScenarioTestAction
         this.validation = validation;
     }
 
-    public void Run(IScenarioTestHelper scenarioTestHelper)
+    public virtual void Run(IScenarioTestHelper scenarioTestHelper)
     {
         validation.Invoke(scenarioTestHelper.GetEntityRepository());
     }
 
-    public string GetDescription()
+    public virtual string GetDescription()
     {
         return "Scenario Test Data Manipulation";
     }
@@ -32,13 +32,13 @@ public class ScenarioTestLocalDataManipulation : IScenarioTestAction
         this.manipulation = manipulation;
     }
 
-    public void Run(IScenarioTestHelper scenarioTestHelper)
+    public virtual void Run(IScenarioTestHelper scenarioTestHelper)
     {
         manipulation.Invoke();
     }
 
 
-    public string GetDescription()
+    public virtual string GetDescription()
     {
         return "Scenario Test Local Data Manipulation";
     }

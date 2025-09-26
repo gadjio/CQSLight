@@ -24,7 +24,7 @@ public class ScenarioTestCommand<T> : IScenarioTestAction where T : ICommand
         IsNeeded = isNeeded;
     }
 
-    public void Run(IScenarioTestHelper scenarioTestHelper)
+    public virtual void Run(IScenarioTestHelper scenarioTestHelper)
     {
         if (IsNeeded != null)
         {
@@ -53,9 +53,8 @@ public class ScenarioTestCommand<T> : IScenarioTestAction where T : ICommand
 
     }
 
-    public string GetDescription()
+    public virtual string GetDescription()
     {
         return $"{typeof(T).Name} - '{Command.AggregateRootId}'";
     }
 }
-

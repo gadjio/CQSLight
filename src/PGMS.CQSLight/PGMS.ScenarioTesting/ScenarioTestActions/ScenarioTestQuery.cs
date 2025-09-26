@@ -1,4 +1,4 @@
-﻿using PGMS.CQSLight.Infra.Querying;
+using PGMS.CQSLight.Infra.Querying;
 using PGMS.ScenarioTesting.ScenarioTestHelpers;
 
 namespace PGMS.ScenarioTesting.ScenarioTestActions;
@@ -14,7 +14,7 @@ public class ScenarioTestQuery<T, TQueryResult> : IScenarioTestAction where T : 
         this.validation = validation;
     }
 
-    public void Run(IScenarioTestHelper scenarioTestHelper)
+    public virtual void Run(IScenarioTestHelper scenarioTestHelper)
     {
         var result = scenarioTestHelper.ProcessQuery(Query);
         validation?.Invoke(result);
@@ -22,7 +22,7 @@ public class ScenarioTestQuery<T, TQueryResult> : IScenarioTestAction where T : 
 
    
 
-    public string GetDescription()
+    public virtual string GetDescription()
     {
         return typeof(T).Name;
     }
