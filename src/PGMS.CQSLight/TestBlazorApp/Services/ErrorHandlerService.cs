@@ -11,7 +11,7 @@ public class ErrorHandlerService : IErrorHandlerService
 
     }
 
-    public Task<bool> HandleError(ICommand command, Exception exception)
+    public Task<bool> HandleError(ICommand command, ContextInfo? contextInfo, Exception exception)
     {
         return Task.FromResult(false);
     }

@@ -7,6 +7,6 @@ namespace PGMS.BlazorComponents
     {
         void ShowError(DomainValidationException domainValidationException);
 
-        Task<bool> HandleError(ICommand? command, Exception exception);
+        Task<bool> HandleError(ICommand? command, ContextInfo? contextInfo, Exception exception);
     }
 }
