@@ -29,6 +29,29 @@ namespace PGMS.CQSLight.Helpers
             }
         }
 
+        public async Task<ProcessCommandResult> SendCommands(List<ICommand> commands, ContextInfo contextInfo)
+        {
+            var result = new ProcessCommandResult{ProcessedCommands = new List<ICommand>()};
+            foreach (var command in commands)
+            {
+                try
+                {
+                    await bus.Send(command, contextInfo);
+                    result.ProcessedCommands.Add(command);
+                }
+                catch (Exception e)
+                {
+                    result.FailCommand = command;
+                    result.Exception = e;
+                    return result;
+                }
+                
+            }
+
+            result.IsSuccess = true;
+            return result;
+        }
+
         public async Task Send(ICommand command, string username)
         {
             await bus.Send(command, new ContextInfo{ByUsername = username});
@@ -57,4 +80,15 @@ namespace PGMS.CQSLight.Helpers
 			}
 		}
 	}
+
+    public class ProcessCommandResult
+    {
+        public List<ICommand> ProcessedCommands { get; set; }
+
+        public bool IsSuccess { get; set; }
+
+        public ICommand? FailCommand { get; set; }
+        public Exception? Exception { get; set; }
+        
+    }
 }

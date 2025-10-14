@@ -67,7 +67,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                     return await Task.FromResult(new SendCommandResult { ValidationResults = exception.ValidationResult });
                 }
 
-                if (! await ErrorHandlerService.HandleError(e))
+                if (! await ErrorHandlerService.HandleError(command, e))
                 {
                     throw;
                 }
@@ -84,9 +84,14 @@ namespace PGMS.BlazorComponents.Components.Actions
 
         protected async Task<SendCommandResult> SendCommands(List<ICommand> commands)
         {
+            ProcessCommandResult? result = null;
             try
             {
-                await CommandHelper.Send(commands, GetContextInfo());
+                result = await CommandHelper.SendCommands(commands, GetContextInfo());
+                if (result.IsSuccess == false)
+                {
+                    throw result.Exception ?? new Exception("Process command has Fail");
+                }
             }
             catch (DomainValidationException e)
             {
@@ -102,7 +107,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                     return await Task.FromResult(new SendCommandResult { ValidationResults = exception.ValidationResult });
                 }
 
-                if (!await ErrorHandlerService.HandleError(e))
+                if (!await ErrorHandlerService.HandleError(result?.FailCommand, e))
                 {
                     throw;
                 }
