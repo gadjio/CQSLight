@@ -4,6 +4,9 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/PGMS.CQSLight.svg)](https://www.nuget.org/packages/PGMS.CQSLight)
 [![License](https://img.shields.io/github/license/gadjio/CQSLight.svg)](https://github.com/gadjio/CQSLight/blob/master/LICENSE)
 
+Version 5.X => DotNet 10.0
+
+Version 4.X => DotNet 8.0
 
 Version 3.X => DotNet 6.0
 
