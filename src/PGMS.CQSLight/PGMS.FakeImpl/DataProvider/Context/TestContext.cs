@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
-using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Contexts;
 
-namespace PGMS.IntegratedTests
+namespace PGMS.FakeImpl.DataProvider.Context
 {
-	public class TestContext : BaseDbContext
+    public class TestContext : BaseDbContext
 	{
 		public TestContext(DbContextOptions options) : base(options)
 		{
@@ -24,7 +23,8 @@ namespace PGMS.IntegratedTests
 		public DbSet<ProjectReporting_Custom> Projects_Custom { get; set; }
 		public DbSet<ProjectParticipant_Custom> ProjectParticipants_Custom { get; set; }
 
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
 
@@ -224,4 +224,8 @@ namespace PGMS.IntegratedTests
 
 		public virtual ProjectReportingFullLazy Project { get; set; }
 	}
+
+
+  
+
 }

@@ -7,6 +7,8 @@ using PGMS.CQSLight.Extensions;
 using PGMS.Data.Services;
 using PGMS.DataProvider.EFCore.Helpers;
 using PGMS.DataProvider.EFCore.Services;
+using PGMS.FakeImpl.DataProvider.Context;
+using TestContext = PGMS.FakeImpl.DataProvider.Context.TestContext;
 
 namespace PGMS.IntegratedTests.DataProvider.EFCore.Services.EntityRepositoryFixtures
 {

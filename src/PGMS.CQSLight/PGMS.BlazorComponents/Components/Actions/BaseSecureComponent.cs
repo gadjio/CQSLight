@@ -49,9 +49,12 @@ namespace PGMS.BlazorComponents.Components.Actions
 
         protected virtual async Task<SendCommandResult> SendCommand(ICommand command)
         {
+            ContextInfo contextInfo = null;
+
             try
             {
-                await CommandHelper.Send(command, GetContextInfo());
+                contextInfo = GetContextInfo();
+                await CommandHelper.Send(command, contextInfo);
             }
             catch (DomainValidationException e)
             {
@@ -67,7 +70,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                     return await Task.FromResult(new SendCommandResult { ValidationResults = exception.ValidationResult });
                 }
 
-                if (! await ErrorHandlerService.HandleError(e))
+                if (! await ErrorHandlerService.HandleError(command, contextInfo, e))
                 {
                     throw;
                 }
@@ -84,9 +87,16 @@ namespace PGMS.BlazorComponents.Components.Actions
 
         protected async Task<SendCommandResult> SendCommands(List<ICommand> commands)
         {
+            ProcessCommandResult? result = null;
+            ContextInfo contextInfo = null;
             try
             {
-                await CommandHelper.Send(commands, GetContextInfo());
+                contextInfo = GetContextInfo();
+                result = await CommandHelper.SendCommands(commands, contextInfo);
+                if (result.IsSuccess == false)
+                {
+                    throw result.Exception ?? new Exception("Process command has Fail");
+                }
             }
             catch (DomainValidationException e)
             {
@@ -102,7 +112,7 @@ namespace PGMS.BlazorComponents.Components.Actions
                     return await Task.FromResult(new SendCommandResult { ValidationResults = exception.ValidationResult });
                 }
 
-                if (!await ErrorHandlerService.HandleError(e))
+                if (!await ErrorHandlerService.HandleError(result?.FailCommand, contextInfo, e))
                 {
                     throw;
                 }

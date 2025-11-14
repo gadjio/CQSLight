@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PGMS.BlazorComponents", "PG
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestBlazorApp", "TestBlazorApp\TestBlazorApp.csproj", "{176970C9-5C70-47CE-A9A3-AFF1C2FCEA57}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PGMS.ScenarioTesting", "PGMS.ScenarioTesting\PGMS.ScenarioTesting.csproj", "{3E85E91D-4B97-41C8-BAB9-D5805E7C8789}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{176970C9-5C70-47CE-A9A3-AFF1C2FCEA57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{176970C9-5C70-47CE-A9A3-AFF1C2FCEA57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{176970C9-5C70-47CE-A9A3-AFF1C2FCEA57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E85E91D-4B97-41C8-BAB9-D5805E7C8789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E85E91D-4B97-41C8-BAB9-D5805E7C8789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E85E91D-4B97-41C8-BAB9-D5805E7C8789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E85E91D-4B97-41C8-BAB9-D5805E7C8789}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,20 +1,268 @@
-﻿using System.Data.Common;
-using System.Linq.Expressions;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using PGMS.Data.Services;
+using System.Collections;
+using System.Data.Common;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 {
-	public class InMemoryReportingRepository : InMemoryEntityRepository
+    public class InMemoryReportingRepository<TContext> : InMemoryEntityRepository, IEntityRepository where TContext : DbContext
+    {
+        private readonly TContext dbContext;
+
+        public InMemoryReportingRepository(TContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
+        protected override IEnumerable<TEntity> GetEntyList<TEntity>(Type key) where TEntity : class
+        {
+            var result = InMemoryMapGetList(key).Cast<TEntity>();
+            ResolveNavigationProperties(key, result.ToList());
+            return result;
+        }
+
+        protected virtual IList? GetTypedList(Type relatedEntityType, Func<object, bool> predicate)
+        {
+            var relatedEntities = InMemoryMapContainsKey(relatedEntityType)
+                ? InMemoryMapGetList(relatedEntityType)
+                    .Cast<object>()
+                    .Where(predicate)
+                    .ToList()
+                : new List<object>();
+
+            var listType = typeof(List<>).MakeGenericType(relatedEntityType);
+            var typedList = Activator.CreateInstance(listType) as IList;
+
+            foreach (var item in relatedEntities)
+            {
+                typedList?.Add(item);
+            }
+
+            return typedList;
+        }
+
+        protected virtual object? GetItemFromMemoryMap(Type relatedEntityType, Func<object, bool> predicate)
+        {
+            var relatedEntity = InMemoryMapContainsKey(relatedEntityType)
+                ? InMemoryMapGetList(relatedEntityType)
+                    .Cast<object>()
+                    .FirstOrDefault(predicate)
+                : null;
+            return relatedEntity;
+        }
+
+        public override IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200, int offset = 0) where TEntity : class
+        {
+            var result = base.GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
+
+            return result;
+        }
+
+        // private void ResolveNavigationProperties(Type entityClrType, IList entities)
+        // {
+        //     var entityType = dbContext.Model.FindEntityType(entityClrType);
+        //     if (entityType == null) return;
+
+        //     foreach (var navigation in entityType.GetNavigations())
+        //     {
+        //         var navigationProperty = entityClrType.GetProperty(navigation.Name);
+        //         if (navigationProperty == null) continue;
+
+        //         var relatedEntityType = navigation.TargetEntityType.ClrType;
+
+        //         if (navigation.IsCollection)
+        //         {
+        //             // HasMany
+        //             var foreignKeys = navigation.ForeignKey.Properties.ToList();
+        //             if (foreignKeys.Any() == false) continue;
+
+        //             var primaryKeys = navigation.ForeignKey.PrincipalKey.Properties.ToList();
+        //             if (primaryKeys.Any() == false) continue;
+
+        //             foreach (var entity in entities)
+        //             {
+        //                 var map = new Dictionary<IProperty, object?>();
+        //                 foreach (var primaryKey in primaryKeys)
+        //                 {
+        //                     var entityKeyValue = primaryKey.PropertyInfo?.GetValue(entity);
+        //map.Add(primaryKey, entityKeyValue);
+        //                 }
+
+        //                 int i = 0;
+
+        //                 foreach (var foreignKey in foreignKeys)
+        //                 {
+        //                     var entityKeyValue = primaryKeys[0].PropertyInfo?.GetValue(entity);
+        //                     Func<object, bool> predicate = e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false;
+
+
+        //                     i++;
+        //                     //var typedList = GetTypedList(
+        //                     //    relatedEntityType,
+        //                     //    predicate
+        //                     //);
+        //                 }
+
+        //                 foreach (var kvp in map)
+        //                 {
+
+        //                 }
+
+        //                 //if (entityKeyValue == null) continue;
+
+        //                 var typedList = GetTypedList(
+        //                     relatedEntityType,
+        //                     e => foreignKey.PropertyInfo?.GetValue(e)?.Equals(entityKeyValue) ?? false
+        //                 );
+
+        //                 navigationProperty.SetValue(entity, typedList);
+        //             }
+        //         }
+        //         else
+        //         {
+        //             // HasOne
+        //             var foreignKey = navigation.ForeignKey.Properties.FirstOrDefault();
+        //             if (foreignKey == null) continue;
+
+        //             var primaryKey = navigation.ForeignKey.PrincipalKey.Properties.FirstOrDefault();
+        //             if (primaryKey == null) continue;
+
+        //             foreach (var entity in entities)
+        //             {
+        //                 var foreignKeyValue = foreignKey.PropertyInfo?.GetValue(entity);
+        //                 if (foreignKeyValue == null) continue;
+
+        //                 Func<object, bool> predicate = e =>
+        //                     primaryKey.PropertyInfo?.GetValue(e)?.Equals(foreignKeyValue) ?? false;
+
+        //                 var relatedEntity = GetItemFromMemoryMap(relatedEntityType, predicate);
+        //                 navigationProperty.SetValue(entity, relatedEntity);
+        //             }
+        //         }
+        //     }
+        // }
+
+
+        private static bool AllEqual(object a, object b)
+        {
+            if (a is null && b is null) return true;
+            if (a is null || b is null) return false;
+            return a.Equals(b);
+        }
+
+        /// <summary>
+        /// Construit un prédicat e => FKProps(e) == keyValues (comparaison positionnelle)
+        /// </summary>
+        private static Func<object, bool> BuildPredicateByValues(
+            IList<PropertyInfo> propsOnCandidate,
+            object[] keyValuesInSameOrder)
+        {
+            return e =>
+            {
+                // e peut être null si pas trouvé / données incohérentes
+                if (e is null) return false;
+
+                for (int i = 0; i < propsOnCandidate.Count; i++)
+                {
+                    var leftVal = propsOnCandidate[i]?.GetValue(e);
+                    var rightVal = keyValuesInSameOrder[i];
+                    if (!AllEqual(leftVal, rightVal)) return false;
+                }
+                return true;
+            };
+        }
+
+        private void ResolveNavigationProperties(Type entityClrType, IList entities)
+        {
+            var entityType = dbContext.Model.FindEntityType(entityClrType);
+            if (entityType == null) return;
+
+            foreach (var navigation in entityType.GetNavigations())
+            {
+                var navigationProperty = entityClrType.GetProperty(navigation.Name);
+                if (navigationProperty == null) continue;
+
+                var relatedEntityType = navigation.TargetEntityType.ClrType;
+
+                // Listes ordonnées, EF Core garantit l’alignement FK[i] <-> PK[i]
+                var foreignKeys = navigation.ForeignKey.Properties.Select(p => p.PropertyInfo).Where(pi => pi != null).ToList()!;
+                if (foreignKeys.Count == 0) continue;
+
+                var principalKeys = navigation.ForeignKey.PrincipalKey.Properties.Select(p => p.PropertyInfo).Where(pi => pi != null).ToList()!;
+                if (principalKeys.Count == 0) continue;
+
+                if (navigation.IsCollection)
+                {
+                    // HasMany: entity (côté principal) possède la collection des dépendants
+                    foreach (var entity in entities)
+                    {
+                        // Récupère les valeurs de PK sur l'entité principale, dans l'ordre des principalKeys
+                        var principalKeyValues = principalKeys
+                            .Select(pk => pk!.GetValue(entity))
+                            .ToArray();
+
+                        // On veut filtrer les dépendants dont FK == principalKeyValues (position par position)
+                        var predicate = BuildPredicateByValues(foreignKeys!, principalKeyValues);
+
+                        var typedList = GetTypedList(relatedEntityType, predicate);
+                        navigationProperty.SetValue(entity, typedList);
+                    }
+                }
+                else
+                {
+                    // HasOne: entity (côté dépendant) pointe vers le principal (référence)
+                    foreach (var entity in entities)
+                    {
+                        // Valeurs de FK portées par l'entité dépendante (courante)
+                        var foreignKeyValues = foreignKeys
+                            .Select(fk => fk!.GetValue(entity))
+                            .ToArray();
+
+                        // Le principal doit matcher PK == foreignKeyValues
+                        var predicate = BuildPredicateByValues(
+                            navigation.ForeignKey.PrincipalKey.Properties.Select(p => p.PropertyInfo!).ToList(),
+                            foreignKeyValues
+                        );
+
+                        var relatedEntity = GetItemFromMemoryMap(relatedEntityType, predicate);
+                        navigationProperty.SetValue(entity, relatedEntity);
+                    }
+                }
+            }
+        }
+    }
+
+    public class InMemoryReportingRepository : InMemoryEntityRepository
 	{
 
 	}
 
 	public class InMemoryEntityRepository : IEntityRepository
 	{
-		private IDictionary<Type, List<object>> inMemoryMap = new Dictionary<Type, List<object>>();
+		protected IDictionary<Type, List<object>> inMemoryMap2 = new Dictionary<Type, List<object>>();
 
-		public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
+        protected virtual bool InMemoryMapContainsKey(Type type)
+        {
+            return inMemoryMap2.ContainsKey(type);
+        }
+
+        protected virtual List<object> InMemoryMapGetList(Type type)
+        {
+            return inMemoryMap2[type];
+        }
+
+        protected virtual void InMemoryMapAddType(Type type)
+        {
+            inMemoryMap2.Add(type, new List<object>());
+        }
+
+
+
+        public void SetCurrentUnitOfWork(IUnitOfWork unitOfWork)
 		{
 			throw new NotImplementedException();
 		}
@@ -175,28 +423,43 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 			return Task.FromResult(result);
 		}
 
+        protected virtual IEnumerable<TEntity> GetEntyList<TEntity>(Type key) where TEntity : class
+        {
+            return InMemoryMapGetList(key).Cast<TEntity>();
+        }
 
-		public IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork,
+        public virtual IList<TEntity> GetOperation<TEntity>(IUnitOfWork unitOfWork,
 			Expression<Func<TEntity, bool>> filter = null,
 			Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, int fetchSize = 200,
 			int offset = 0) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			if (!inMemoryMap.ContainsKey(key))
+			if (!InMemoryMapContainsKey(key))
 			{
 				return new List<TEntity>();
 			}
 
-			if (filter == null)
-			{
-				return inMemoryMap[key].Cast<TEntity>().ToList();
-			}
+            var list = GetEntyList<TEntity>(key).AsQueryable();
+			
+            // Applique le filtre si présent
+            if (filter != null)
+            {
+                list = list.Where(filter);
+            }
 
-			var query = filter.Compile();
-			return inMemoryMap[key].Cast<TEntity>().Where(query).ToList();
-		}
+            // Applique le tri si présent
+            if (orderBy != null)
+            {
+                list = orderBy(list);
+            }
 
-		public Task<List<TEntity>> GetOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+            // Applique le offset et fetchSize (pagination)
+            return list.Skip(offset).Take(fetchSize).ToList();
+        }
+
+       
+
+        public Task<List<TEntity>> GetOperationAsync<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
 			int fetchSize = 200, int offset = 0) where TEntity : class
         {
             var result = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset).ToList();
@@ -238,12 +501,12 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 		public void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			if (!inMemoryMap.ContainsKey(key))
+			if (!InMemoryMapContainsKey(key))
 			{
-				inMemoryMap.Add(key, new List<object>());
+				InMemoryMapAddType(key);
 			}
 
-			inMemoryMap[key].Add(entity);
+            InMemoryMapGetList(key).Add(entity);
 		}
 
 		public Task InsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
@@ -255,19 +518,19 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
         public Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
         {
             var key = typeof(TEntity);
-            if (!inMemoryMap.ContainsKey(key))
+            if (!InMemoryMapContainsKey(key))
             {
-                inMemoryMap.Add(key, new List<object>());
+                InMemoryMapAddType(key);
             }
 
-            inMemoryMap[key].AddRange(entities);
+            InMemoryMapGetList(key).AddRange(entities);
             return Task.CompletedTask;
         }
 
         public void DeleteOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class
 		{
 			var key = typeof(TEntity);
-			inMemoryMap[key].Remove(entityToDelete);
+            InMemoryMapGetList(key).Remove(entityToDelete);
 		}
 
 		public Task DeleteOperationAsync<TEntity>(IUnitOfWork unitOfWork, TEntity entityToDelete) where TEntity : class

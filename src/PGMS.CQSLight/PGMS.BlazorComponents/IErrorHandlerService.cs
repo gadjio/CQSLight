@@ -1,4 +1,5 @@
-﻿using PGMS.CQSLight.Infra.Exceptions;
+﻿using PGMS.CQSLight.Infra.Commands;
+using PGMS.CQSLight.Infra.Exceptions;
 
 namespace PGMS.BlazorComponents
 {
@@ -6,6 +7,6 @@ namespace PGMS.BlazorComponents
     {
         void ShowError(DomainValidationException domainValidationException);
 
-        Task<bool> HandleError(Exception exception);
+        Task<bool> HandleError(ICommand? command, ContextInfo? contextInfo, Exception exception);
     }
 }
