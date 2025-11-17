@@ -9,6 +9,7 @@
     <RepositoryUrl>https://github.com/gadjio/CQSLight</RepositoryUrl>
     <Description>CQS Light framework with DirectBus</Description>
 	  <Version>$(PgmsVersion)</Version>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PGMS.DataServices\PGMS.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -4,6 +4,6 @@
 		<Version>$(PgmsVersion)</Version>
 		<AssemblyVersion>$(PgmsVersion)</AssemblyVersion>
 		<FileVersion>$(PgmsVersion)</FileVersion>
-		<PackageVersion>$(Version)-RC2</PackageVersion>
+		<PackageVersion>$(Version)</PackageVersion>
 	</PropertyGroup>
 </Project>

@@ -12,6 +12,7 @@
 - Fake impementations of Transaction, UnitOfWork
 - In Memory EntityRepository</Description>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,13 @@
     <ProjectReference Include="..\PGMS.CQSLight\PGMS.CQSLight.csproj" />
     <ProjectReference Include="..\PGMS.DataProvider.EFCore\PGMS.DataProvider.EFCore.csproj" />
     <ProjectReference Include="..\PGMS.DataServices\PGMS.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
   </ItemGroup>
 
 </Project>
