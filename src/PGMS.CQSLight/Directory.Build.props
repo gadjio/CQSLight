@@ -1,6 +1,6 @@
 <Project>
 	<PropertyGroup>
-		<PgmsVersion>5.0.0.0</PgmsVersion>
+		<PgmsVersion>5.0.0.1</PgmsVersion>
 		<Version>$(PgmsVersion)</Version>
 		<AssemblyVersion>$(PgmsVersion)</AssemblyVersion>
 		<FileVersion>$(PgmsVersion)</FileVersion>

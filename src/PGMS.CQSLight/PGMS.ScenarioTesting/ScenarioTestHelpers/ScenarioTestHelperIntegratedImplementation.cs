@@ -14,9 +14,9 @@ public interface ICqsApiHelper
 
 public class ScenarioTestHelperIntegratedImplementation<TContext> : IScenarioTestHelper where TContext : DbContext, IDbContext
 {
-    private readonly ICqsApiHelper cqsApiHelper;
-    private readonly string connectionString;
-    private readonly ContextFactory<TContext> contextFactory;
+    protected readonly ICqsApiHelper cqsApiHelper;
+    protected readonly string connectionString;
+    protected readonly ContextFactory<TContext> contextFactory;
 
     public ScenarioTestHelperIntegratedImplementation(ICqsApiHelper cqsApiHelper, string connectionString, ContextFactory<TContext> contextFactory)
     {
@@ -49,6 +49,9 @@ public class ScenarioTestHelperIntegratedImplementation<TContext> : IScenarioTes
     {
         throw new NotImplementedException();
     }
+
+    public virtual void SetAdditionalContextInfo(object param)
+    { }
 
     public override string ToString() => $"Integrated";
 }

@@ -16,6 +16,8 @@ public interface IScenarioTestHelper
     IEntityRepository GetEntityRepository();
 
     T GetRegisteredService<T>();
+
+    void SetAdditionalContextInfo(object param);
 }
 
 //public class TypeToRegister
