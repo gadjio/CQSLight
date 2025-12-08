@@ -7,7 +7,7 @@ namespace PGMS.ScenarioTesting.ScenarioTestHelpers;
 public abstract class BaseScenarioTest
 {
     protected abstract IScenarioTestHelper ScenarioTestHelper { get; }
-    public abstract List<IScenarioTestAction> Givens();
+    public abstract List<Tuple<string, IScenarioTestAction>> Givens();
     public abstract IEnumerable<Tuple<string, IScenarioTestAction>> GetActions();
 
     [OneTimeSetUp]
@@ -18,8 +18,8 @@ public abstract class BaseScenarioTest
         foreach (var given in Givens())
         {
             var start = DateTime.Now;
-            Console.Write($@"Given {step} - {given.GetDescription()}");
-            RunScenarioTestAction(given);
+            Console.Write($@"Given {step} {given.Item1} - {given.Item2.GetDescription()}");
+            RunScenarioTestAction(given.Item2);
 
             var elapsed = DateTime.Now - start;
             Console.WriteLine($" : COMPLETED - {(int)elapsed.TotalMilliseconds} ms");

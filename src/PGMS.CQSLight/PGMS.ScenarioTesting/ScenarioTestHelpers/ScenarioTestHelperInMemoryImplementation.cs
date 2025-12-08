@@ -14,10 +14,10 @@ namespace PGMS.ScenarioTesting.ScenarioTestHelpers;
 public class ScenarioTestHelperInMemoryImplementation<TContext> : IScenarioTestHelper where TContext : DbContext
 {
     
-    private InMemoryReportingRepository<TContext> entityRepository;
-    private IContainer container;
-    private IBus bus;
-    private IQueryProcessor queryProcessor;
+    protected InMemoryReportingRepository<TContext> entityRepository;
+    protected IContainer container;
+    protected IBus bus;
+    protected IQueryProcessor queryProcessor;
 
     public ScenarioTestHelperInMemoryImplementation(TContext context, ContainerBuilder builder)
     {
@@ -44,22 +44,7 @@ public class ScenarioTestHelperInMemoryImplementation<TContext> : IScenarioTestH
 
     public virtual void SendCommand(ICommand command, List<string>? roles = null)
     {
-        //if (command is BaseAuthTokenCommand baseAuthCommand)
-        //{
-        //    // To force FakeSecurityUserRepository - SetAuthToken to string.Empty
-        //    if (baseAuthCommand.UserAuthToken == null)
-        //    {
-        //        baseAuthCommand.UserAuthToken = "";
-        //    }
-        //}
-
-        var contextInfo = new ContextInfo()
-        {
-            UserRoles = roles,
-            ByUserId = "1",
-            ByUsername = "1",
-            SkipRoleValidation = true
-        };
+        var contextInfo = GetContextInfo(roles);
 
         try
         {
@@ -75,6 +60,18 @@ public class ScenarioTestHelperInMemoryImplementation<TContext> : IScenarioTestH
             throw;
         }
 
+    }
+
+    protected virtual ContextInfo GetContextInfo(List<string>? roles)
+    {
+        var contextInfo = new ContextInfo()
+        {
+            UserRoles = roles,
+            ByUserId = "1",
+            ByUsername = "1",
+            SkipRoleValidation = true
+        };
+        return contextInfo;
     }
 
     public T ProcessQuery<T>(IQuery<T> query)
@@ -93,8 +90,8 @@ public class ScenarioTestHelperInMemoryImplementation<TContext> : IScenarioTestH
         return task.Result;
     }
 
-
-   
+    public virtual void SetAdditionalContextInfo(object param)
+    { }
 
     public T GetRegisteredService<T>()
     {
