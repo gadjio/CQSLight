@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -14,6 +15,11 @@ namespace PGMS.DataProvider.EFCore.Services
 {
     public class BaseOperationEntityRepository<T> where T : DbContext, IDbContext
     {
+        private static readonly ConcurrentDictionary<Type, bool> _isLazyLoadingCache = new();
+        private static readonly ConcurrentDictionary<Type, bool> _hasLazyLoadingCache = new();
+        private static readonly ConcurrentDictionary<Type, List<PropertyInfo>> _lazyLoadingPropertiesCache = new();
+        private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _complexTypePropertiesCache = new();
+
         protected static DbSet<TEntity> GetDbSet<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
         {
             return ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
@@ -312,45 +318,58 @@ namespace PGMS.DataProvider.EFCore.Services
 
         private List<PropertyInfo> GetLazyLoadingProperties(Type type)
         {
-	        var result = new List<PropertyInfo>();
-
-	        foreach (var property in type.GetProperties())
+	        return _lazyLoadingPropertiesCache.GetOrAdd(type, t =>
 	        {
-		        var hasIsLazyLoading = Attribute.IsDefined(property, typeof(LazyLoadAttribute));
-		        if (hasIsLazyLoading)
+		        var result = new List<PropertyInfo>();
+
+		        foreach (var property in t.GetProperties())
 		        {
-			        result.Add(property);
-                    continue;
+			        var hasIsLazyLoading = Attribute.IsDefined(property, typeof(LazyLoadAttribute));
+			        if (hasIsLazyLoading)
+			        {
+				        result.Add(property);
+				        continue;
+			        }
+
+			        if (Attribute.GetCustomAttributes(property).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute"))
+			        {
+				        result.Add(property);
+				        continue;
+			        }
 		        }
 
-		        if (Attribute.GetCustomAttributes(property).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute"))
-		        {
-			        result.Add(property);
-			        continue;
-                }
-	        }
-
-	        return result;
+		        return result;
+	        });
         }
 
         private bool HasLazyLoading(Type type)
         {
-	        foreach (var property in type.GetProperties())
+	        return _hasLazyLoadingCache.GetOrAdd(type, t =>
 	        {
-		        var hasIsLazyLoading = Attribute.IsDefined(property, typeof(IsLazyLoadingAttribute));
-		        if (hasIsLazyLoading)
+		        foreach (var property in t.GetProperties())
 		        {
-			        return true;
+			        var hasIsLazyLoading = Attribute.IsDefined(property, typeof(IsLazyLoadingAttribute));
+			        if (hasIsLazyLoading)
+			        {
+				        return true;
+			        }
 		        }
-	        }
 
-	        return false;
+		        return false;
+	        });
         }
 
         private bool IsLazyLoading(Type type)
         {
-	        return Attribute.IsDefined(type, typeof(LazyLoadAttribute)) ||
-	               Attribute.GetCustomAttributes(type).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute");
+	        return _isLazyLoadingCache.GetOrAdd(type, t =>
+		        Attribute.IsDefined(t, typeof(LazyLoadAttribute)) ||
+		        Attribute.GetCustomAttributes(t).Any(x => x.GetType().Name.ToLower() == "islazyloadingattribute"));
+        }
+
+        private PropertyInfo[] GetComplexTypeProperties(Type type)
+        {
+	        return _complexTypePropertiesCache.GetOrAdd(type, t =>
+		        t.GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(IsComplexTypeAttribute))).ToArray());
         }
 
         public TEntity FindFirstOperation<TEntity>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter = null) where TEntity : class
@@ -562,7 +581,7 @@ namespace PGMS.DataProvider.EFCore.Services
             context.Attach(entityToUpdate);
             context.Entry(entityToUpdate).State = EntityState.Modified;
 
-            var props = entityToUpdate.GetType().GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(IsComplexTypeAttribute)));
+            var props = GetComplexTypeProperties(entityToUpdate.GetType());
             foreach (var prop in props)
             {
 	            var nestedComplexObject = context.Entry(entityToUpdate).Reference(prop.Name).TargetEntry;
@@ -582,7 +601,7 @@ namespace PGMS.DataProvider.EFCore.Services
             context.Attach(entityToUpdate);
             context.Entry(entityToUpdate).State = EntityState.Modified;
 
-            var props = entityToUpdate.GetType().GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(IsComplexTypeAttribute)));
+            var props = GetComplexTypeProperties(entityToUpdate.GetType());
             foreach (var prop in props)
             {
                 var nestedComplexObject = context.Entry(entityToUpdate).Reference(prop.Name).TargetEntry;
