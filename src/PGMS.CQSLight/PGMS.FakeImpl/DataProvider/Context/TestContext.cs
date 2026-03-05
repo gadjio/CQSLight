@@ -23,6 +23,8 @@ namespace PGMS.FakeImpl.DataProvider.Context
 		public DbSet<ProjectReporting_Custom> Projects_Custom { get; set; }
 		public DbSet<ProjectParticipant_Custom> ProjectParticipants_Custom { get; set; }
 
+		public DbSet<KeylessViewReporting> KeylessViews { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -68,6 +70,12 @@ namespace PGMS.FakeImpl.DataProvider.Context
 			modelBuilder.Entity<ProjectSupplierFullLazy>(entity =>
 			{
 				entity.HasKey(k => new { k.SupplierId, k.ProjectId });
+			});
+
+			modelBuilder.Entity<KeylessViewReporting>(entity =>
+			{
+				entity.HasNoKey();
+				entity.ToView("KeylessViewReporting");
 			});
 		}
 	}
@@ -183,6 +191,12 @@ namespace PGMS.FakeImpl.DataProvider.Context
 	public class IslazyloadingAttribute : Attribute
 	{
 
+	}
+
+	public class KeylessViewReporting
+	{
+		public string Name { get; set; }
+		public int Value { get; set; }
 	}
 
 
