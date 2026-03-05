@@ -14,6 +14,50 @@ namespace PGMS.DataProvider.EFCore.Services
 {
     public class BaseOperationEntityRepository<T> where T : DbContext, IDbContext
     {
+        protected Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> GetPrimaryKeyOrderBy<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
+        {
+            try
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                var entityType = context.Model.FindEntityType(typeof(TEntity));
+                var primaryKey = entityType?.FindPrimaryKey();
+
+                if (primaryKey == null || primaryKey.Properties.Count == 0)
+                {
+                    return null;
+                }
+
+                // Shadow properties do not have a CLR PropertyInfo — we cannot build an OrderBy expression for them
+                if (primaryKey.Properties.Any(p => p.PropertyInfo == null))
+                {
+                    return null;
+                }
+
+                return query =>
+                {
+                    IOrderedQueryable<TEntity> orderedQuery = null;
+                    foreach (var keyProperty in primaryKey.Properties)
+                    {
+                        var parameter = Expression.Parameter(typeof(TEntity), "e");
+                        var property = Expression.Property(parameter, keyProperty.PropertyInfo);
+                        var lambda = Expression.Lambda(property, parameter);
+
+                        var methodName = orderedQuery == null ? "OrderBy" : "ThenBy";
+                        var method = typeof(Queryable).GetMethods()
+                            .First(m => m.Name == methodName && m.GetParameters().Length == 2)
+                            .MakeGenericMethod(typeof(TEntity), keyProperty.ClrType);
+
+                        orderedQuery = (IOrderedQueryable<TEntity>)method.Invoke(null, new object[] { orderedQuery ?? (IQueryable<TEntity>)query, lambda });
+                    }
+                    return orderedQuery;
+                };
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         protected static DbSet<TEntity> GetDbSet<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
         {
             return ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
@@ -235,11 +279,15 @@ namespace PGMS.DataProvider.EFCore.Services
         {
             var query = GetOperationQuery(unitOfWork, filter);
 
+            if (orderBy == null)
+            {
+                orderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
+            }
+
             if (orderBy != null)
             {
                 return orderBy(query).Skip(offset).Take(fetchSize).ToList();
             }
-            
 
             return query.Skip(offset).Take(fetchSize).ToList();
         }
@@ -250,11 +298,15 @@ namespace PGMS.DataProvider.EFCore.Services
         {
             var query = GetOperationQuery(unitOfWork, filter);
 
+            if (orderBy == null)
+            {
+                orderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
+            }
+
             if (orderBy != null)
             {
                 return await orderBy(query).Skip(offset).Take(fetchSize).ToListAsync();
             }
-
 
             return await query.Skip(offset).Take(fetchSize).ToListAsync();
         }
@@ -266,11 +318,15 @@ namespace PGMS.DataProvider.EFCore.Services
 
             query = query.Distinct().AsQueryable();
 
+            if (orderBy == null)
+            {
+                orderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
+            }
+
             if (orderBy != null)
 	        {
 		        return await orderBy(query).Skip(offset).Take(fetchSize).ToListAsync();
 	        }
-
 
 	        return await query.Skip(offset).Take(fetchSize).ToListAsync();
         }
