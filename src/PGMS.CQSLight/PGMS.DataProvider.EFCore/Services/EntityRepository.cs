@@ -59,6 +59,26 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
         /// <summary>
+        /// Returns true if the entity has a single-column primary key (not composite).
+        /// Keyset pagination with OR clauses on composite keys can cause SQL Server
+        /// to fall back to index scans, so we only use keyset for single-column PKs.
+        /// </summary>
+        protected bool IsSingleColumnPrimaryKey<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
+        {
+            try
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                var entityType = context.Model.FindEntityType(typeof(TEntity));
+                var primaryKey = entityType?.FindPrimaryKey();
+                return primaryKey != null && primaryKey.Properties.Count == 1 && primaryKey.Properties[0].PropertyInfo != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Extracts the primary key values from an entity instance.
         /// Supports single and composite keys. Returns null if extraction fails.
         /// </summary>
@@ -930,8 +950,9 @@ namespace PGMS.DataProvider.EFCore.Services
             var result = new List<TEntity>();
             IList<TEntity> subList;
 
-            // Use keyset pagination when no custom orderBy and PK is available (single or composite)
-            if (orderBy == null)
+            // Use keyset pagination only for single-column PKs (composite key OR clauses
+            // cause SQL Server to fall back to index scans, which is slower than offset)
+            if (orderBy == null && IsSingleColumnPrimaryKey<TEntity>(unitOfWork))
             {
                 var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
                 if (pkOrderBy != null)
@@ -959,7 +980,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 }
             }
 
-            // Fallback to offset pagination
+            // Fallback to offset pagination (also used for composite keys)
             int offset = 0;
             do
             {
@@ -979,8 +1000,9 @@ namespace PGMS.DataProvider.EFCore.Services
             var result = new List<TEntity>();
             IList<TEntity> subList;
 
-            // Use keyset pagination when no custom orderBy and PK is available (single or composite)
-            if (orderBy == null)
+            // Use keyset pagination only for single-column PKs (composite key OR clauses
+            // cause SQL Server to fall back to index scans, which is slower than offset)
+            if (orderBy == null && IsSingleColumnPrimaryKey<TEntity>(unitOfWork))
             {
                 var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
                 if (pkOrderBy != null)
@@ -1008,7 +1030,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 }
             }
 
-            // Fallback to offset pagination
+            // Fallback to offset pagination (also used for composite keys)
             int offset = 0;
             do
             {
