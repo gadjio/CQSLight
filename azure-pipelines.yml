@@ -45,7 +45,7 @@ steps:
     displayName: 'Pack NuGet packages'
     inputs:
       command: 'pack'
-      packagesToPack: 'src/PGMS.CQSLight/PGMS.CQSLight/PGMS.CQSLight.csproj;src/PGMS.CQSLight/PGMS.DataServices/PGMS.Data.csproj;src/PGMS.CQSLight/PGMS.DataProvider.EFCore/PGMS.DataProvider.EFCore.csproj;src/PGMS.CQSLight/PGMS.BlazorComponents/PGMS.BlazorComponents.csproj;src/PGMS.CQSLight/PGMS.CQSLight.UnitTestUtilities/PGMS.CQSLight.UnitTestUtilities.csproj'
+      packagesToPack: 'src/PGMS.CQSLight/PGMS.CQSLight/PGMS.CQSLight.csproj;src/PGMS.CQSLight/PGMS.DataServices/PGMS.Data.csproj;src/PGMS.CQSLight/PGMS.DataProvider.EFCore/PGMS.DataProvider.EFCore.csproj;src/PGMS.CQSLight/PGMS.BlazorComponents/PGMS.BlazorComponents.csproj;src/PGMS.CQSLight/PGMS.CQSLight.UnitTestUtilities/PGMS.CQSLight.UnitTestUtilities.csproj;src/PGMS.CQSLight/PGMS.ScenarioTesting/PGMS.ScenarioTesting.csproj'
       configuration: '$(buildConfiguration)'
       nobuild: true
       versioningScheme: 'off'
