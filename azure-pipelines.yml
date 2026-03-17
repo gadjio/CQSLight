@@ -1,0 +1,65 @@
+trigger:
+  branches:
+    include:
+      - master
+      - hotfix/*
+      - feature/*
+      - version_4
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  solution: 'src/PGMS.CQSLight/PGMS.CQSLight.sln'
+  buildConfiguration: 'Release'
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Install .NET SDK'
+    inputs:
+      packageType: 'sdk'
+      useGlobalJson: true
+      workingDirectory: 'src/PGMS.CQSLight'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore NuGet packages'
+    inputs:
+      command: 'restore'
+      projects: '$(solution)'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Build solution'
+    inputs:
+      command: 'build'
+      projects: '$(solution)'
+      arguments: '--configuration $(buildConfiguration) --no-restore'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Run unit tests'
+    inputs:
+      command: 'test'
+      projects: 'src/PGMS.CQSLight/PGMS.UnitTests/PGMS.UnitTests.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Pack NuGet packages'
+    inputs:
+      command: 'pack'
+      packagesToPack: |
+        src/PGMS.CQSLight/PGMS.CQSLight/PGMS.CQSLight.csproj
+        src/PGMS.CQSLight/PGMS.DataServices/PGMS.Data.csproj
+        src/PGMS.CQSLight/PGMS.DataProvider.EFCore/PGMS.DataProvider.EFCore.csproj
+        src/PGMS.CQSLight/PGMS.BlazorComponents/PGMS.BlazorComponents.csproj
+        src/PGMS.CQSLight/PGMS.CQSLight.UnitTestUtilities/PGMS.CQSLight.UnitTestUtilities.csproj
+      configuration: '$(buildConfiguration)'
+      nobuild: true
+      versioningScheme: 'off'
+      packDirectory: '$(Build.ArtifactStagingDirectory)/nuget'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish NuGet artifacts'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/nuget'
+      ArtifactName: 'nuget-packages'
+      publishLocation: 'Container'
+
