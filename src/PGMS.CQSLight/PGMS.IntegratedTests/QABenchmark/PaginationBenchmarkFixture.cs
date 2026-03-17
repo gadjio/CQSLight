@@ -142,5 +142,198 @@ public class PaginationBenchmarkFixture
 
         Assert.That(page.Count, Is.EqualTo(fetchSize));
     }
+
+    // ──────────────────────────────────────────────────────────
+    // FindAllAsync — large subset (internal loop of 2000-row pages)
+    // ──────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Benchmark_FindAllAsync_DomainEventReporting_LargeSubset()
+    {
+        // First, find a valid starting ID
+        var firstPage = await entityRepository.GetAsync<DomainEventReportingQA>(null, null, 1, 0);
+        Assert.That(firstPage.Count, Is.GreaterThan(0), "Table must have data");
+        var minId = firstPage.First().Id;
+
+        // FindAllAsync internally loops with pages of 2000 using GetOperationAsync
+        // Use a range that should return ~50K rows to exercise multiple internal pages
+        const long idRange = 500_000;
+        var sw = Stopwatch.StartNew();
+        var result = await entityRepository.FindAllAsync<DomainEventReportingQA>(
+            x => x.Id >= minId && x.Id < minId + idRange);
+        var elapsed = sw.ElapsedMilliseconds;
+
+        var ids = result.Select(x => x.Id).ToList();
+        var uniqueCount = ids.Distinct().Count();
+        var internalPages = (int)Math.Ceiling(result.Count / 2000.0);
+
+        TestContext.WriteLine($"[DomainEventReporting] FindAllAsync large subset (Id {minId} to {minId + idRange})");
+        TestContext.WriteLine($"  Total rows fetched: {result.Count}");
+        TestContext.WriteLine($"  Internal pages (2000/page): {internalPages}");
+        TestContext.WriteLine($"  Unique IDs: {uniqueCount}");
+        TestContext.WriteLine($"  Duplicates: {result.Count - uniqueCount}");
+        TestContext.WriteLine($"  Time: {elapsed} ms");
+        TestContext.WriteLine($"  Avg per internal page: {(internalPages > 0 ? elapsed / internalPages : 0)} ms");
+
+        Assert.That(result.Count, Is.GreaterThan(0), "Should find rows in the range");
+        Assert.That(ids.Count, Is.EqualTo(uniqueCount), "FindAllAsync should return no duplicate IDs");
+        Assert.That(ids, Is.Ordered, "FindAllAsync results should be ordered by PK");
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // FindTopAsync — large fetch size + high offset
+    // ──────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Benchmark_FindTopAsync_DomainEventReporting_LargeFetchAndOffset()
+    {
+        const int fetchSize = 10_000;
+        const int offset = 50_000;
+
+        var sw = Stopwatch.StartNew();
+        var result = await entityRepository.FindTopAsync<DomainEventReportingQA>(
+            null, null, fetchSize, offset);
+        var elapsed = sw.ElapsedMilliseconds;
+
+        var ids = result.Select(x => x.Id).ToList();
+        var uniqueCount = ids.Distinct().Count();
+
+        TestContext.WriteLine($"[DomainEventReporting] FindTopAsync fetchSize={fetchSize}, offset={offset}");
+        TestContext.WriteLine($"  Rows: {result.Count}");
+        TestContext.WriteLine($"  Unique IDs: {uniqueCount}");
+        TestContext.WriteLine($"  Duplicates: {result.Count - uniqueCount}");
+        TestContext.WriteLine($"  Time: {elapsed} ms");
+
+        Assert.That(result.Count, Is.EqualTo(fetchSize));
+        Assert.That(ids.Count, Is.EqualTo(uniqueCount), "FindTopAsync should return no duplicate IDs");
+        Assert.That(ids, Is.Ordered, "FindTopAsync results should be ordered by PK");
+    }
+
+    [Test]
+    public async Task Benchmark_FindTopAsync_DomainEventReporting_VeryDeepOffset()
+    {
+        const int fetchSize = 5_000;
+        const int offset = 500_000;
+
+        string offsetResult;
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var result = await entityRepository.FindTopAsync<DomainEventReportingQA>(
+                null, null, fetchSize, offset);
+            var elapsed = sw.ElapsedMilliseconds;
+
+            var ids = result.Select(x => x.Id).ToList();
+            var uniqueCount = ids.Distinct().Count();
+
+            offsetResult = $"{elapsed} ms ({result.Count} rows, {uniqueCount} unique)";
+            TestContext.WriteLine($"[DomainEventReporting] FindTopAsync DEEP OFFSET fetchSize={fetchSize}, offset={offset}");
+            TestContext.WriteLine($"  {offsetResult}");
+        }
+        catch (Exception ex)
+        {
+            offsetResult = $"TIMEOUT/ERROR after {sw.ElapsedMilliseconds} ms — {ex.GetType().Name}";
+            TestContext.WriteLine($"[DomainEventReporting] FindTopAsync DEEP OFFSET fetchSize={fetchSize}, offset={offset}");
+            TestContext.WriteLine($"  {offsetResult}");
+        }
+
+        // Compare: keyset pagination to reach the same depth
+        TestContext.WriteLine($"  (See Benchmark_KeysetPagination_DeepTraversal for keyset alternative)");
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // KEYSET PAGINATION — sequential deep traversal
+    // ──────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Benchmark_KeysetPagination_DomainEventReporting_DeepTraversal()
+    {
+        // Traverse to the equivalent of offset 500K using keyset pagination (WHERE Id > lastId)
+        // Each page uses offset=0, so SQL only needs to scan fetchSize rows per page
+        const int fetchSize = 5_000;
+        const int targetRows = 500_000; // equivalent to reaching offset 500K
+        var totalPages = targetRows / fetchSize;
+
+        var sw = Stopwatch.StartNew();
+        var allIds = new HashSet<long>();
+        long lastId = 0;
+        int pagesRead = 0;
+
+        for (int i = 0; i < totalPages; i++)
+        {
+            // Keyset filter: WHERE Id > lastId ORDER BY Id FETCH 5000
+            var page = await entityRepository.GetAsync<DomainEventReportingQA>(
+                x => x.Id > lastId, null, fetchSize, 0);
+
+            if (page.Count == 0)
+                break;
+
+            foreach (var row in page)
+                allIds.Add(row.Id);
+
+            lastId = page[page.Count - 1].Id;
+            pagesRead++;
+        }
+
+        var elapsed = sw.ElapsedMilliseconds;
+
+        // Now fetch the final page (equivalent to "the page at offset 500K")
+        sw.Restart();
+        var finalPage = await entityRepository.GetAsync<DomainEventReportingQA>(
+            x => x.Id > lastId, null, fetchSize, 0);
+        var finalPageTime = sw.ElapsedMilliseconds;
+
+        var finalIds = finalPage.Select(x => x.Id).ToList();
+        var finalUniqueCount = finalIds.Distinct().Count();
+
+        TestContext.WriteLine($"[DomainEventReporting] KEYSET pagination to depth {targetRows}");
+        TestContext.WriteLine($"  Pages traversed: {pagesRead} x {fetchSize} rows");
+        TestContext.WriteLine($"  Total traversal time: {elapsed} ms");
+        TestContext.WriteLine($"  Avg per page: {(pagesRead > 0 ? elapsed / pagesRead : 0)} ms");
+        TestContext.WriteLine($"  Total unique IDs seen: {allIds.Count}");
+        TestContext.WriteLine($"  --- Final page (at depth ~{targetRows}) ---");
+        TestContext.WriteLine($"  Rows: {finalPage.Count}, Unique: {finalUniqueCount}");
+        TestContext.WriteLine($"  Time for final page: {finalPageTime} ms");
+
+        Assert.That(finalPage.Count, Is.EqualTo(fetchSize), "Final keyset page should return full fetch size");
+        Assert.That(finalIds.Count, Is.EqualTo(finalUniqueCount), "No duplicates in final page");
+        Assert.That(finalIds, Is.Ordered, "Final page should be ordered by PK");
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // FindAllAsync with KEYSET — large subset performance
+    // ──────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task Benchmark_FindAllAsync_DomainEventReporting_LargeSubset_WithKeyset()
+    {
+        // FindAllAsync now uses keyset pagination internally (WHERE Id > lastId)
+        // This should be significantly faster than offset-based for large result sets
+        var firstPage = await entityRepository.GetAsync<DomainEventReportingQA>(null, null, 1, 0);
+        Assert.That(firstPage.Count, Is.GreaterThan(0), "Table must have data");
+        var minId = firstPage.First().Id;
+
+        const long idRange = 500_000;
+        var sw = Stopwatch.StartNew();
+        var result = await entityRepository.FindAllAsync<DomainEventReportingQA>(
+            x => x.Id >= minId && x.Id < minId + idRange);
+        var elapsed = sw.ElapsedMilliseconds;
+
+        var ids = result.Select(x => x.Id).ToList();
+        var uniqueCount = ids.Distinct().Count();
+        var internalPages = (int)Math.Ceiling(result.Count / 2000.0);
+
+        TestContext.WriteLine($"[DomainEventReporting] FindAllAsync KEYSET subset (Id {minId} to {minId + idRange})");
+        TestContext.WriteLine($"  Total rows fetched: {result.Count}");
+        TestContext.WriteLine($"  Internal pages (2000/page): {internalPages}");
+        TestContext.WriteLine($"  Unique IDs: {uniqueCount}");
+        TestContext.WriteLine($"  Duplicates: {result.Count - uniqueCount}");
+        TestContext.WriteLine($"  Time: {elapsed} ms");
+        TestContext.WriteLine($"  Avg per internal page: {(internalPages > 0 ? elapsed / internalPages : 0)} ms");
+
+        Assert.That(result.Count, Is.GreaterThan(0), "Should find rows in the range");
+        Assert.That(ids.Count, Is.EqualTo(uniqueCount), "FindAllAsync keyset should return no duplicate IDs");
+        Assert.That(ids, Is.Ordered, "FindAllAsync keyset results should be ordered by PK");
+    }
 }
 

@@ -64,6 +64,82 @@ namespace PGMS.DataProvider.EFCore.Services
             }
         }
 
+        /// <summary>
+        /// Extracts the primary key value from an entity instance (single-column PK only).
+        /// Returns null for composite keys, shadow properties, or if extraction fails.
+        /// </summary>
+        protected object GetPrimaryKeyValue<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
+        {
+            try
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                var entityType = context.Model.FindEntityType(typeof(TEntity));
+                var primaryKey = entityType?.FindPrimaryKey();
+
+                if (primaryKey == null || primaryKey.Properties.Count != 1)
+                    return null;
+
+                var keyProp = primaryKey.Properties[0];
+                if (keyProp.PropertyInfo == null)
+                    return null;
+
+                return keyProp.PropertyInfo.GetValue(entity);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Builds a keyset filter expression: e => e.PK > lastKeyValue.
+        /// Only works for single-column PKs. Returns null otherwise.
+        /// </summary>
+        protected Expression<Func<TEntity, bool>> GetKeysetFilter<TEntity>(IUnitOfWork unitOfWork, object lastKeyValue) where TEntity : class
+        {
+            try
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                var entityType = context.Model.FindEntityType(typeof(TEntity));
+                var primaryKey = entityType?.FindPrimaryKey();
+
+                if (primaryKey == null || primaryKey.Properties.Count != 1)
+                    return null;
+
+                var keyProp = primaryKey.Properties[0];
+                if (keyProp.PropertyInfo == null)
+                    return null;
+
+                var parameter = Expression.Parameter(typeof(TEntity), "e");
+                var property = Expression.Property(parameter, keyProp.PropertyInfo);
+                var value = Expression.Constant(Convert.ChangeType(lastKeyValue, keyProp.ClrType), keyProp.ClrType);
+                var greaterThan = Expression.GreaterThan(property, value);
+
+                return Expression.Lambda<Func<TEntity, bool>>(greaterThan, parameter);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Combines two filter expressions with AND. If either is null, returns the other.
+        /// </summary>
+        protected static Expression<Func<TEntity, bool>> CombineFilters<TEntity>(
+            Expression<Func<TEntity, bool>> filter1,
+            Expression<Func<TEntity, bool>> filter2)
+        {
+            if (filter1 == null) return filter2;
+            if (filter2 == null) return filter1;
+
+            var parameter = Expression.Parameter(typeof(TEntity), "e");
+            var body = Expression.AndAlso(
+                Expression.Invoke(filter1, parameter),
+                Expression.Invoke(filter2, parameter));
+            return Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+        }
+
         protected static DbSet<TEntity> GetDbSet<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
         {
             return ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
@@ -845,8 +921,38 @@ namespace PGMS.DataProvider.EFCore.Services
 
             var result = new List<TEntity>();
             IList<TEntity> subList;
-            int offset = 0;
 
+            // Use keyset pagination when no custom orderBy and single PK is available
+            if (orderBy == null)
+            {
+                var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
+                if (pkOrderBy != null)
+                {
+                    object lastKeyValue = null;
+                    do
+                    {
+                        var effectiveFilter = filter;
+                        if (lastKeyValue != null)
+                        {
+                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValue);
+                            if (keysetFilter != null)
+                                effectiveFilter = CombineFilters(filter, keysetFilter);
+                        }
+
+                        subList = GetOperation(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
+                        if (subList.Any())
+                        {
+                            lastKeyValue = GetPrimaryKeyValue(unitOfWork, subList[subList.Count - 1]);
+                            result.AddRange(subList);
+                        }
+                    } while (subList.Any() && lastKeyValue != null);
+
+                    return result;
+                }
+            }
+
+            // Fallback to offset pagination
+            int offset = 0;
             do
             {
                 subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
@@ -864,8 +970,38 @@ namespace PGMS.DataProvider.EFCore.Services
 
             var result = new List<TEntity>();
             IList<TEntity> subList;
-            int offset = 0;
 
+            // Use keyset pagination when no custom orderBy and single PK is available
+            if (orderBy == null)
+            {
+                var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
+                if (pkOrderBy != null)
+                {
+                    object lastKeyValue = null;
+                    do
+                    {
+                        var effectiveFilter = filter;
+                        if (lastKeyValue != null)
+                        {
+                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValue);
+                            if (keysetFilter != null)
+                                effectiveFilter = CombineFilters(filter, keysetFilter);
+                        }
+
+                        subList = await GetOperationAsync(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
+                        if (subList.Any())
+                        {
+                            lastKeyValue = GetPrimaryKeyValue(unitOfWork, subList[subList.Count - 1]);
+                            result.AddRange(subList);
+                        }
+                    } while (subList.Any() && lastKeyValue != null);
+
+                    return result;
+                }
+            }
+
+            // Fallback to offset pagination
+            int offset = 0;
             do
             {
                 subList = await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
