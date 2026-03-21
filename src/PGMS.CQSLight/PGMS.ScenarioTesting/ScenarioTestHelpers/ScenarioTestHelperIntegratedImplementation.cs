@@ -45,13 +45,13 @@ public class ScenarioTestHelperIntegratedImplementation<TContext> : IScenarioTes
         return entityRepository;
     }
 
+    public virtual void SetAdditionalContextInfo(object param)
+    { }
+
     public T GetRegisteredService<T>()
     {
         throw new NotImplementedException();
     }
-
-    public virtual void SetAdditionalContextInfo(object param)
-    { }
 
     public override string ToString() => $"Integrated";
 }

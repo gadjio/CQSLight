@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using NUnit.Framework.Internal;
 using PGMS.ScenarioTesting.ScenarioTestActions;
 
