@@ -12,5 +12,14 @@ namespace PGMS.DataProvider.EFCore.Services
             var context = await factory.Create(connectionString);
             return new UnitOfWork<T>(connectionString, context, autoFlush);
         }
+
+        /// <summary>
+        /// Fully synchronous path — avoids sync-over-async deadlocks.
+        /// </summary>
+        public static IUnitOfWork GetUnitOfWorkSync(string connectionString, ContextFactory<T> factory, bool autoFlush)
+        {
+            var context = factory.CreateSync(connectionString);
+            return new UnitOfWork<T>(connectionString, context, autoFlush);
+        }
     }
 }

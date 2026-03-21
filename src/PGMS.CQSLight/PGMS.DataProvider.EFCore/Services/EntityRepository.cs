@@ -903,9 +903,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 return currentUnitOfWork;
 	        }
 
-            var task = UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
-            task.Wait();
-            return task.Result;
+            return UnitOfWorkFactory<T>.GetUnitOfWorkSync(ConnectionsString, factory, autoFlush);
         }
 
         public string GetConnectionString()
