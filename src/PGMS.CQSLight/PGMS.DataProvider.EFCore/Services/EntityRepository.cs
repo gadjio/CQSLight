@@ -59,10 +59,30 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
         /// <summary>
-        /// Extracts the primary key value from an entity instance (single-column PK only).
-        /// Returns null for composite keys, shadow properties, or if extraction fails.
+        /// Returns true if the entity has a single-column primary key (not composite).
+        /// Keyset pagination with OR clauses on composite keys can cause SQL Server
+        /// to fall back to index scans, so we only use keyset for single-column PKs.
         /// </summary>
-        protected object GetPrimaryKeyValue<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
+        protected bool IsSingleColumnPrimaryKey<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
+        {
+            try
+            {
+                var context = ((UnitOfWork<T>)unitOfWork).GetContext();
+                var entityType = context.Model.FindEntityType(typeof(TEntity));
+                var primaryKey = entityType?.FindPrimaryKey();
+                return primaryKey != null && primaryKey.Properties.Count == 1 && primaryKey.Properties[0].PropertyInfo != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Extracts the primary key values from an entity instance.
+        /// Supports single and composite keys. Returns null if extraction fails.
+        /// </summary>
+        protected object[] GetPrimaryKeyValues<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
         {
             try
             {
@@ -70,14 +90,18 @@ namespace PGMS.DataProvider.EFCore.Services
                 var entityType = context.Model.FindEntityType(typeof(TEntity));
                 var primaryKey = entityType?.FindPrimaryKey();
 
-                if (primaryKey == null || primaryKey.Properties.Count != 1)
+                if (primaryKey == null || primaryKey.Properties.Count == 0)
                     return null;
 
-                var keyProp = primaryKey.Properties[0];
-                if (keyProp.PropertyInfo == null)
+                if (primaryKey.Properties.Any(p => p.PropertyInfo == null))
                     return null;
 
-                return keyProp.PropertyInfo.GetValue(entity);
+                var values = new object[primaryKey.Properties.Count];
+                for (int i = 0; i < primaryKey.Properties.Count; i++)
+                {
+                    values[i] = primaryKey.Properties[i].PropertyInfo.GetValue(entity);
+                }
+                return values;
             }
             catch (Exception)
             {
@@ -86,10 +110,11 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
         /// <summary>
-        /// Builds a keyset filter expression: e => e.PK > lastKeyValue.
-        /// Only works for single-column PKs. Returns null otherwise.
+        /// Builds a keyset filter expression for single or composite PKs.
+        /// Single PK:    e => e.PK > lastValue
+        /// Composite PK: e => (e.K1 > v1) || (e.K1 == v1 &amp;&amp; e.K2 > v2) || ...
         /// </summary>
-        protected Expression<Func<TEntity, bool>> GetKeysetFilter<TEntity>(IUnitOfWork unitOfWork, object lastKeyValue) where TEntity : class
+        protected Expression<Func<TEntity, bool>> GetKeysetFilter<TEntity>(IUnitOfWork unitOfWork, object[] lastKeyValues) where TEntity : class
         {
             try
             {
@@ -97,19 +122,41 @@ namespace PGMS.DataProvider.EFCore.Services
                 var entityType = context.Model.FindEntityType(typeof(TEntity));
                 var primaryKey = entityType?.FindPrimaryKey();
 
-                if (primaryKey == null || primaryKey.Properties.Count != 1)
+                if (primaryKey == null || primaryKey.Properties.Count == 0)
                     return null;
 
-                var keyProp = primaryKey.Properties[0];
-                if (keyProp.PropertyInfo == null)
+                if (primaryKey.Properties.Any(p => p.PropertyInfo == null))
+                    return null;
+
+                if (lastKeyValues == null || lastKeyValues.Length != primaryKey.Properties.Count)
                     return null;
 
                 var parameter = Expression.Parameter(typeof(TEntity), "e");
-                var property = Expression.Property(parameter, keyProp.PropertyInfo);
-                var value = Expression.Constant(Convert.ChangeType(lastKeyValue, keyProp.ClrType), keyProp.ClrType);
-                var greaterThan = Expression.GreaterThan(property, value);
 
-                return Expression.Lambda<Func<TEntity, bool>>(greaterThan, parameter);
+                // Build: (K1 > v1) OR (K1 == v1 AND K2 > v2) OR (K1 == v1 AND K2 == v2 AND K3 > v3) ...
+                Expression combined = null;
+                for (int i = 0; i < primaryKey.Properties.Count; i++)
+                {
+                    // Build equality chain for all keys before index i
+                    Expression clause = null;
+                    for (int j = 0; j < i; j++)
+                    {
+                        var eqProp = Expression.Property(parameter, primaryKey.Properties[j].PropertyInfo);
+                        var eqVal = Expression.Constant(Convert.ChangeType(lastKeyValues[j], primaryKey.Properties[j].ClrType), primaryKey.Properties[j].ClrType);
+                        var eq = Expression.Equal(eqProp, eqVal);
+                        clause = clause == null ? eq : Expression.AndAlso(clause, eq);
+                    }
+
+                    // Greater than on key at index i
+                    var gtProp = Expression.Property(parameter, primaryKey.Properties[i].PropertyInfo);
+                    var gtVal = Expression.Constant(Convert.ChangeType(lastKeyValues[i], primaryKey.Properties[i].ClrType), primaryKey.Properties[i].ClrType);
+                    var gt = Expression.GreaterThan(gtProp, gtVal);
+
+                    var fullClause = clause == null ? gt : Expression.AndAlso(clause, gt);
+                    combined = combined == null ? fullClause : Expression.OrElse(combined, fullClause);
+                }
+
+                return Expression.Lambda<Func<TEntity, bool>>(combined, parameter);
             }
             catch (Exception)
             {
@@ -903,19 +950,20 @@ namespace PGMS.DataProvider.EFCore.Services
             var result = new List<TEntity>();
             IList<TEntity> subList;
 
-            // Use keyset pagination when no custom orderBy and single PK is available
-            if (orderBy == null)
+            // Use keyset pagination only for single-column PKs (composite key OR clauses
+            // cause SQL Server to fall back to index scans, which is slower than offset)
+            if (orderBy == null && IsSingleColumnPrimaryKey<TEntity>(unitOfWork))
             {
                 var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
                 if (pkOrderBy != null)
                 {
-                    object lastKeyValue = null;
+                    object[] lastKeyValues = null;
                     do
                     {
                         var effectiveFilter = filter;
-                        if (lastKeyValue != null)
+                        if (lastKeyValues != null)
                         {
-                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValue);
+                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValues);
                             if (keysetFilter != null)
                                 effectiveFilter = CombineFilters(filter, keysetFilter);
                         }
@@ -923,16 +971,16 @@ namespace PGMS.DataProvider.EFCore.Services
                         subList = GetOperation(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
                         if (subList.Any())
                         {
-                            lastKeyValue = GetPrimaryKeyValue(unitOfWork, subList[subList.Count - 1]);
+                            lastKeyValues = GetPrimaryKeyValues(unitOfWork, subList[subList.Count - 1]);
                             result.AddRange(subList);
                         }
-                    } while (subList.Any() && lastKeyValue != null);
+                    } while (subList.Any() && lastKeyValues != null);
 
                     return result;
                 }
             }
 
-            // Fallback to offset pagination
+            // Fallback to offset pagination (also used for composite keys)
             int offset = 0;
             do
             {
@@ -952,19 +1000,20 @@ namespace PGMS.DataProvider.EFCore.Services
             var result = new List<TEntity>();
             IList<TEntity> subList;
 
-            // Use keyset pagination when no custom orderBy and single PK is available
-            if (orderBy == null)
+            // Use keyset pagination only for single-column PKs (composite key OR clauses
+            // cause SQL Server to fall back to index scans, which is slower than offset)
+            if (orderBy == null && IsSingleColumnPrimaryKey<TEntity>(unitOfWork))
             {
                 var pkOrderBy = GetPrimaryKeyOrderBy<TEntity>(unitOfWork);
                 if (pkOrderBy != null)
                 {
-                    object lastKeyValue = null;
+                    object[] lastKeyValues = null;
                     do
                     {
                         var effectiveFilter = filter;
-                        if (lastKeyValue != null)
+                        if (lastKeyValues != null)
                         {
-                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValue);
+                            var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValues);
                             if (keysetFilter != null)
                                 effectiveFilter = CombineFilters(filter, keysetFilter);
                         }
@@ -972,16 +1021,16 @@ namespace PGMS.DataProvider.EFCore.Services
                         subList = await GetOperationAsync(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
                         if (subList.Any())
                         {
-                            lastKeyValue = GetPrimaryKeyValue(unitOfWork, subList[subList.Count - 1]);
+                            lastKeyValues = GetPrimaryKeyValues(unitOfWork, subList[subList.Count - 1]);
                             result.AddRange(subList);
                         }
-                    } while (subList.Any() && lastKeyValue != null);
+                    } while (subList.Any() && lastKeyValues != null);
 
                     return result;
                 }
             }
 
-            // Fallback to offset pagination
+            // Fallback to offset pagination (also used for composite keys)
             int offset = 0;
             do
             {

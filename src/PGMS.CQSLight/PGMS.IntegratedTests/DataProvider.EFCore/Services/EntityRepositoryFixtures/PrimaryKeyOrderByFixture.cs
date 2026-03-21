@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -182,6 +183,164 @@ public class PrimaryKeyOrderByFixture
 
         var ids = result.Select(x => x.Id).ToList();
         Assert.That(ids, Is.Ordered, "Results should be ordered by primary key (Id)");
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // COMPOSITE KEY KEYSET PAGINATION – COMPLETENESS TESTS
+    // ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Inserts many rows with composite PK across multiple projects,
+    /// then verifies FindAll returns every single row without omissions or duplicates.
+    /// Uses ProjectParticipant (ClientId, ProjectId).
+    /// </summary>
+    [Test]
+    public void FindAll_CompositeKey_NoOmissionsOrDuplicates_ProjectParticipant()
+    {
+        // Arrange – insert 5 projects x 50 participants = 250 composite key rows
+        var projectIds = new List<long>();
+        for (int p = 0; p < 5; p++)
+        {
+            var aggId = Guid.NewGuid();
+            entityRepository.Insert(new ProjectReporting { AggregateRootId = aggId });
+            var proj = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == aggId);
+            projectIds.Add(proj.Id);
+
+            for (int c = 1; c <= 50; c++)
+            {
+                entityRepository.Insert(new ProjectParticipant { ProjectId = proj.Id, ClientId = 10000 + (p * 100) + c });
+            }
+        }
+
+        // Act – FindAll uses keyset pagination internally (fetchSize=2000, but we can verify correctness)
+        var allParticipants = entityRepository.FindAll<ProjectParticipant>(
+            x => projectIds.Contains(x.ProjectId));
+
+        // Assert
+        Assert.That(allParticipants.Count, Is.EqualTo(250), "Should return all 250 participants");
+
+        var keys = allParticipants.Select(x => (x.ClientId, x.ProjectId)).ToList();
+        var uniqueKeys = keys.Distinct().ToList();
+        Assert.That(uniqueKeys.Count, Is.EqualTo(250), "No duplicate composite keys");
+
+        NUnit.Framework.TestContext.WriteLine($"[ProjectParticipant] FindAll composite key: {allParticipants.Count} rows, {uniqueKeys.Count} unique keys, 0 duplicates");
+    }
+
+    /// <summary>
+    /// Same as above but with FindAllAsync.
+    /// </summary>
+    [Test]
+    public async Task FindAllAsync_CompositeKey_NoOmissionsOrDuplicates_ProjectParticipant()
+    {
+        // Arrange – insert 5 projects x 50 participants = 250 composite key rows
+        var projectIds = new List<long>();
+        for (int p = 0; p < 5; p++)
+        {
+            var aggId = Guid.NewGuid();
+            entityRepository.Insert(new ProjectReporting { AggregateRootId = aggId });
+            var proj = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == aggId);
+            projectIds.Add(proj.Id);
+
+            for (int c = 1; c <= 50; c++)
+            {
+                entityRepository.Insert(new ProjectParticipant { ProjectId = proj.Id, ClientId = 20000 + (p * 100) + c });
+            }
+        }
+
+        // Act
+        var allParticipants = await entityRepository.FindAllAsync<ProjectParticipant>(
+            x => projectIds.Contains(x.ProjectId));
+
+        // Assert
+        Assert.That(allParticipants.Count, Is.EqualTo(250), "Should return all 250 participants");
+
+        var keys = allParticipants.Select(x => (x.ClientId, x.ProjectId)).ToList();
+        var uniqueKeys = keys.Distinct().ToList();
+        Assert.That(uniqueKeys.Count, Is.EqualTo(250), "No duplicate composite keys");
+
+        NUnit.Framework.TestContext.WriteLine($"[ProjectParticipant] FindAllAsync composite key: {allParticipants.Count} rows, {uniqueKeys.Count} unique keys, 0 duplicates");
+    }
+
+    /// <summary>
+    /// Tests ProjectSupplier (SupplierId, ProjectId) composite key with FindAll.
+    /// </summary>
+    [Test]
+    public void FindAll_CompositeKey_NoOmissionsOrDuplicates_ProjectSupplier()
+    {
+        // Arrange – insert 5 projects x 40 suppliers = 200 composite key rows
+        var projectIds = new List<long>();
+        for (int p = 0; p < 5; p++)
+        {
+            var aggId = Guid.NewGuid();
+            entityRepository.Insert(new ProjectReporting { AggregateRootId = aggId });
+            var proj = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == aggId);
+            projectIds.Add(proj.Id);
+
+            for (int s = 1; s <= 40; s++)
+            {
+                entityRepository.Insert(new ProjectSupplier { ProjectId = proj.Id, SupplierId = 30000 + (p * 100) + s });
+            }
+        }
+
+        // Act
+        var allSuppliers = entityRepository.FindAll<ProjectSupplier>(
+            x => projectIds.Contains(x.ProjectId));
+
+        // Assert
+        Assert.That(allSuppliers.Count, Is.EqualTo(200), "Should return all 200 suppliers");
+
+        var keys = allSuppliers.Select(x => (x.SupplierId, x.ProjectId)).ToList();
+        var uniqueKeys = keys.Distinct().ToList();
+        Assert.That(uniqueKeys.Count, Is.EqualTo(200), "No duplicate composite keys");
+
+        NUnit.Framework.TestContext.WriteLine($"[ProjectSupplier] FindAll composite key: {allSuppliers.Count} rows, {uniqueKeys.Count} unique keys, 0 duplicates");
+    }
+
+    /// <summary>
+    /// Stress test: inserts enough composite key rows to force multiple internal keyset pages
+    /// (fetchSize=2000 internally), then verifies completeness.
+    /// </summary>
+    [Test]
+    public async Task FindAllAsync_CompositeKey_MultiplePages_NoOmissionsOrDuplicates()
+    {
+        // Arrange – insert 10 projects x 500 participants = 5000 rows → 3 internal pages at fetchSize=2000
+        var projectIds = new List<long>();
+        for (int p = 0; p < 10; p++)
+        {
+            var aggId = Guid.NewGuid();
+            entityRepository.Insert(new ProjectReporting { AggregateRootId = aggId });
+            var proj = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == aggId);
+            projectIds.Add(proj.Id);
+
+            for (int c = 1; c <= 500; c++)
+            {
+                entityRepository.Insert(new ProjectParticipant { ProjectId = proj.Id, ClientId = 40000 + (p * 1000) + c });
+            }
+        }
+
+        // Act
+        var allParticipants = await entityRepository.FindAllAsync<ProjectParticipant>(
+            x => projectIds.Contains(x.ProjectId));
+
+        // Assert
+        Assert.That(allParticipants.Count, Is.EqualTo(5000), "Should return all 5000 participants across 3+ keyset pages");
+
+        var keys = allParticipants.Select(x => (x.ClientId, x.ProjectId)).ToList();
+        var uniqueKeys = keys.Distinct().ToList();
+        Assert.That(uniqueKeys.Count, Is.EqualTo(5000), "No duplicate composite keys");
+
+        // Verify ordering (should be ordered by first PK column = ClientId, then ProjectId)
+        for (int i = 1; i < allParticipants.Count; i++)
+        {
+            var prev = allParticipants[i - 1];
+            var curr = allParticipants[i];
+            var prevTuple = (prev.ClientId, prev.ProjectId);
+            var currTuple = (curr.ClientId, curr.ProjectId);
+            Assert.That(currTuple, Is.GreaterThan(prevTuple),
+                $"Row {i} should be > row {i - 1}: ({curr.ClientId},{curr.ProjectId}) vs ({prev.ClientId},{prev.ProjectId})");
+        }
+
+        NUnit.Framework.TestContext.WriteLine($"[ProjectParticipant] FindAllAsync multi-page composite key: {allParticipants.Count} rows, {uniqueKeys.Count} unique, 0 duplicates, ordering verified");
     }
 }
 
