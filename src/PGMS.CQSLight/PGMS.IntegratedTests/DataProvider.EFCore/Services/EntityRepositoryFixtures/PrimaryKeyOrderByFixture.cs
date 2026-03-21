@@ -126,6 +126,51 @@ public class PrimaryKeyOrderByFixture
     }
 
     [Test]
+    public void FindAll_CompositePK_SingleResult_ReturnsOne()
+    {
+        var project = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == projectId);
+
+        // Act - filter on composite key entity that should return exactly 1 result (like ApplicationUserRole scenario)
+        var result = entityRepository.FindAll<ProjectParticipant>(x => x.ProjectId == project.Id && x.ClientId == 1001);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(1), "FindAll with filter on composite key entity should return exactly 1 result");
+        Assert.That(result[0].ClientId, Is.EqualTo(1001));
+        Assert.That(result[0].ProjectId, Is.EqualTo(project.Id));
+        NUnit.Framework.TestContext.WriteLine($"[CompositePK SingleResult] FindAll returned {result.Count} result(s) — ClientId={result[0].ClientId}");
+    }
+
+    [Test]
+    public void FindFirst_CompositePK_ReturnsOne()
+    {
+        var project = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == projectId);
+
+        // Act - FindFirst on composite key entity with filter
+        var result = entityRepository.FindFirst<ProjectParticipant>(x => x.ProjectId == project.Id && x.ClientId == 1002);
+
+        // Assert
+        Assert.That(result, Is.Not.Null, "FindFirst with filter on composite key entity should return a result");
+        Assert.That(result.ClientId, Is.EqualTo(1002));
+        Assert.That(result.ProjectId, Is.EqualTo(project.Id));
+        NUnit.Framework.TestContext.WriteLine($"[CompositePK FindFirst] Returned ClientId={result.ClientId}, ProjectId={result.ProjectId}");
+    }
+
+    [Test]
+    public void FindAll_CompositePK_FilterOnSingleColumn_ReturnsExpectedCount()
+    {
+        var project = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == projectId);
+
+        // Act - filter only on one column of composite key (like: x => x.UserId == user.Id)
+        var result = entityRepository.FindAll<ProjectParticipant>(x => x.ProjectId == project.Id);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(3), "FindAll filtering on single column of composite key should return all matching rows");
+        NUnit.Framework.TestContext.WriteLine($"[CompositePK FilterOnSingleColumn] FindAll returned {result.Count} result(s)");
+    }
+
+    [Test]
     public async Task GetAsync_WithoutOrderBy_CompositePK_PaginationIsConsistent()
     {
         var project = entityRepository.FindFirst<ProjectReporting>(x => x.AggregateRootId == projectId);
