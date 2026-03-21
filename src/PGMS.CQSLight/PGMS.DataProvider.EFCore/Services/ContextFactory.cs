@@ -6,15 +6,22 @@ namespace PGMS.DataProvider.EFCore.Services
 {
     public abstract class ContextFactory<T> where T : DbContext, IDbContext
     {
-	   
+
         public virtual Task<T> Create(string connectionString)
+        {
+            return Task.FromResult(CreateSync(connectionString));
+        }
+
+        /// <summary>
+        /// Synchronous context creation. Used by the synchronous GetUnitOfWork path
+        /// to avoid sync-over-async deadlocks. Override this if you need custom context creation logic.
+        /// </summary>
+        public virtual T CreateSync(string connectionString)
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlServer(connectionString);
 
-            var context = CreateContext(optionsBuilder.Options);
-            
-            return Task.FromResult(context);
+            return CreateContext(optionsBuilder.Options);
         }
 
         public abstract T CreateContext(DbContextOptions<T> options);

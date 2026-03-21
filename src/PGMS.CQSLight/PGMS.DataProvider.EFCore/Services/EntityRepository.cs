@@ -59,9 +59,10 @@ namespace PGMS.DataProvider.EFCore.Services
         }
 
         /// <summary>
-        /// Returns true if the entity has a single-column primary key (not composite).
-        /// Keyset pagination with OR clauses on composite keys can cause SQL Server
-        /// to fall back to index scans, so we only use keyset for single-column PKs.
+        /// Returns true if the entity has a single-column primary key (not composite)
+        /// whose CLR type supports the GreaterThan operator (numeric/DateTime types).
+        /// Keyset pagination requires GreaterThan comparisons; types like string or Guid
+        /// do not support Expression.GreaterThan and would cause an infinite loop.
         /// </summary>
         protected bool IsSingleColumnPrimaryKey<TEntity>(IUnitOfWork unitOfWork) where TEntity : class
         {
@@ -70,12 +71,27 @@ namespace PGMS.DataProvider.EFCore.Services
                 var context = ((UnitOfWork<T>)unitOfWork).GetContext();
                 var entityType = context.Model.FindEntityType(typeof(TEntity));
                 var primaryKey = entityType?.FindPrimaryKey();
-                return primaryKey != null && primaryKey.Properties.Count == 1 && primaryKey.Properties[0].PropertyInfo != null;
+                if (primaryKey == null || primaryKey.Properties.Count != 1 || primaryKey.Properties[0].PropertyInfo == null)
+                    return false;
+
+                var clrType = Nullable.GetUnderlyingType(primaryKey.Properties[0].ClrType) ?? primaryKey.Properties[0].ClrType;
+                return IsKeysetCompatibleType(clrType);
             }
             catch (Exception)
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Returns true if the type supports Expression.GreaterThan (needed for keyset pagination).
+        /// String, Guid, and other non-numeric types do NOT support the &gt; operator in C# expressions.
+        /// </summary>
+        private static bool IsKeysetCompatibleType(Type type)
+        {
+            return type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(byte)
+                || type == typeof(decimal) || type == typeof(double) || type == typeof(float)
+                || type == typeof(DateTime) || type == typeof(DateTimeOffset);
         }
 
         /// <summary>
@@ -884,9 +900,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 return currentUnitOfWork;
 	        }
 
-            var task = UnitOfWorkFactory<T>.GetUnitOfWork(ConnectionsString, factory, autoFlush);
-            task.Wait();
-            return task.Result;
+            return UnitOfWorkFactory<T>.GetUnitOfWorkSync(ConnectionsString, factory, autoFlush);
         }
 
         public string GetConnectionString()
@@ -966,6 +980,8 @@ namespace PGMS.DataProvider.EFCore.Services
                             var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValues);
                             if (keysetFilter != null)
                                 effectiveFilter = CombineFilters(filter, keysetFilter);
+                            else
+                                break; // Cannot build keyset filter (unsupported PK type) — return results collected so far
                         }
 
                         subList = GetOperation(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
@@ -974,7 +990,7 @@ namespace PGMS.DataProvider.EFCore.Services
                             lastKeyValues = GetPrimaryKeyValues(unitOfWork, subList[subList.Count - 1]);
                             result.AddRange(subList);
                         }
-                    } while (subList.Any() && lastKeyValues != null);
+                    } while (subList.Count >= fetchSize && lastKeyValues != null);
 
                     return result;
                 }
@@ -987,7 +1003,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 subList = GetOperation(unitOfWork, filter, orderBy, fetchSize, offset);
                 offset = offset + fetchSize;
                 result.AddRange(subList);
-            } while (subList.Any());
+            } while (subList.Count >= fetchSize);
 
             return result;
         }
@@ -1016,6 +1032,8 @@ namespace PGMS.DataProvider.EFCore.Services
                             var keysetFilter = GetKeysetFilter<TEntity>(unitOfWork, lastKeyValues);
                             if (keysetFilter != null)
                                 effectiveFilter = CombineFilters(filter, keysetFilter);
+                            else
+                                break; // Cannot build keyset filter (unsupported PK type) — return results collected so far
                         }
 
                         subList = await GetOperationAsync(unitOfWork, effectiveFilter, pkOrderBy, fetchSize, 0);
@@ -1024,7 +1042,7 @@ namespace PGMS.DataProvider.EFCore.Services
                             lastKeyValues = GetPrimaryKeyValues(unitOfWork, subList[subList.Count - 1]);
                             result.AddRange(subList);
                         }
-                    } while (subList.Any() && lastKeyValues != null);
+                    } while (subList.Count >= fetchSize && lastKeyValues != null);
 
                     return result;
                 }
@@ -1037,7 +1055,7 @@ namespace PGMS.DataProvider.EFCore.Services
                 subList = await GetOperationAsync(unitOfWork, filter, orderBy, fetchSize, offset);
                 offset = offset + fetchSize;
                 result.AddRange(subList);
-            } while (subList.Any());
+            } while (subList.Count >= fetchSize);
 
             return result;
         }
