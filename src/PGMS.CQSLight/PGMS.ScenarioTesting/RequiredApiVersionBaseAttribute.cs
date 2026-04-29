@@ -62,7 +62,7 @@ public class RequiredApiVersionBaseAttribute : Attribute, ITestAction
     public VersionInfoModel GetVersion()
     {
         var url = BaseUrl + GetVersionPath;
-        var client = new RestClient(new RestClientOptions { MaxTimeout = -1 });
+        var client = new RestClient(new RestClientOptions { Timeout = System.Threading.Timeout.InfiniteTimeSpan });
 
         var request = new RestRequest(url, Method.Get);
         request.AddHeader("Content-Type", "application/json");
