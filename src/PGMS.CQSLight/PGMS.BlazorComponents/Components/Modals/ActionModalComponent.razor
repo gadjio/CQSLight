@@ -2,8 +2,8 @@
 
 @inject IStringLocalizer localizer;
 
-<Modal @ref="@modal" Closing="@OnModalClosing">
-    <ModalContent Size="@ModalSize">
+<Modal @ref="@modal" Closing="@OnModalClosing" Size="@ModalSize">
+    <ModalContent>
         <ModalHeader>
             <ModalTitle>@ModalTitle</ModalTitle>
             <CloseButton Clicked="HideModal"/>

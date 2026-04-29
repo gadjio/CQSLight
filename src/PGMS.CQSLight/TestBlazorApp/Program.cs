@@ -1,5 +1,5 @@
 using Blazorise;
-using Blazorise.Bootstrap;
+using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using Microsoft.Extensions.Localization;
 using PGMS.BlazorComponents;
@@ -18,7 +18,7 @@ builder.Services.AddBlazorise(options =>
     {
         options.Immediate = true;
     })
-    .AddBootstrapProviders()
+    .AddBootstrap5Providers()
     .AddFontAwesomeIcons();
 
 builder.Services.AddPgmsBlazorComponents(opt => 
