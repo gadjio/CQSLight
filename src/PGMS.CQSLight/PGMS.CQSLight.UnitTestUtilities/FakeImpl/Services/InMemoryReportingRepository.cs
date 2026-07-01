@@ -356,6 +356,18 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
             return Task.FromResult(result);
 		}
 
+		public Dictionary<TKey, TValue> Max<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+		{
+			var groupByFunc = groupBy.Compile();
+			var selectorFunc = selector.Compile();
+			return FindAll<TEntity>(filter).GroupBy(groupByFunc).ToDictionary(g => g.Key, g => g.Max(selectorFunc));
+		}
+
+		public Task<Dictionary<TKey, TValue>> MaxAsync<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+		{
+			return Task.FromResult(Max(filter, groupBy, selector));
+		}
+
 		public void Insert<TEntity>(TEntity entity) where TEntity : class
 		{
 			InsertOperation(null, entity);

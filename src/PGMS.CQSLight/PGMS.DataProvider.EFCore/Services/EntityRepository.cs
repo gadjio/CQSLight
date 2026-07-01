@@ -13,6 +13,13 @@ using PGMS.Data.Services;
 
 namespace PGMS.DataProvider.EFCore.Services
 {
+    /// <summary>Projection row for grouped aggregate queries (e.g. grouped MAX): one key + its aggregate value.</summary>
+    public class GroupAggregate<TKey, TValue>
+    {
+        public TKey Key { get; set; }
+        public TValue Value { get; set; }
+    }
+
     public class BaseOperationEntityRepository<T> where T : DbContext, IDbContext
     {
         private static readonly ConcurrentDictionary<Type, bool> _isLazyLoadingCache = new();
@@ -683,6 +690,53 @@ namespace PGMS.DataProvider.EFCore.Services
             return await query.GroupBy(groupBy).Select(g => new { key = g.Key, count = g.Count() }).ToDictionaryAsync(k => k.key, i => i.count);
         }
 
+        public Dictionary<TKey, TValue> MaxOperation<TEntity, TKey, TValue>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+        {
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+            return query.GroupBy(groupBy).Select(BuildGroupMaxSelector<TEntity, TKey, TValue>(selector)).ToDictionary(r => r.Key, r => r.Value);
+        }
+
+        public async Task<Dictionary<TKey, TValue>> MaxOperationAsync<TEntity, TKey, TValue>(IUnitOfWork unitOfWork, Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+        {
+            var dbSet = ((UnitOfWork<T>)unitOfWork).GetDbSet<TEntity>();
+            IQueryable<TEntity> query = dbSet;
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+            return await query.GroupBy(groupBy).Select(BuildGroupMaxSelector<TEntity, TKey, TValue>(selector)).ToDictionaryAsync(r => r.Key, r => r.Value);
+        }
+
+        // Builds the projection: g => new GroupAggregate&lt;TKey,TValue&gt; { Key = g.Key, Value = g.Max(selector) }.
+        // Built dynamically (rather than an inline lambda) because the selector is supplied as an expression,
+        // so EF Core can translate it to SQL "MAX(selector) ... GROUP BY key".
+        private static Expression<Func<IGrouping<TKey, TEntity>, GroupAggregate<TKey, TValue>>> BuildGroupMaxSelector<TEntity, TKey, TValue>(Expression<Func<TEntity, TValue>> selector)
+        {
+            var g = Expression.Parameter(typeof(IGrouping<TKey, TEntity>), "g");
+            var keyAccess = Expression.Property(g, "Key");
+
+            var maxMethod = typeof(Enumerable).GetMethods()
+                .Single(m => m.Name == nameof(Enumerable.Max)
+                             && m.IsGenericMethodDefinition
+                             && m.GetGenericArguments().Length == 2
+                             && m.GetParameters().Length == 2)
+                .MakeGenericMethod(typeof(TEntity), typeof(TValue));
+            var maxCall = Expression.Call(maxMethod, g, selector);
+
+            var rowType = typeof(GroupAggregate<TKey, TValue>);
+            var body = Expression.MemberInit(
+                Expression.New(rowType),
+                Expression.Bind(rowType.GetProperty(nameof(GroupAggregate<TKey, TValue>.Key)), keyAccess),
+                Expression.Bind(rowType.GetProperty(nameof(GroupAggregate<TKey, TValue>.Value)), maxCall));
+
+            return Expression.Lambda<Func<IGrouping<TKey, TEntity>, GroupAggregate<TKey, TValue>>>(body, g);
+        }
+
         public virtual void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
         {
 	        var context = GetContext(unitOfWork);
@@ -1143,6 +1197,18 @@ namespace PGMS.DataProvider.EFCore.Services
         {
             await using var unitOfWork = await GetUnitOfWorkAsync();
             return await CountOperationAsync(unitOfWork, filter, groupBy);
+        }
+
+        public Dictionary<TKey, TValue> Max<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+        {
+            using var unitOfWork = GetUnitOfWork();
+            return MaxOperation(unitOfWork, filter, groupBy, selector);
+        }
+
+        public async Task<Dictionary<TKey, TValue>> MaxAsync<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class
+        {
+            await using var unitOfWork = await GetUnitOfWorkAsync();
+            return await MaxOperationAsync(unitOfWork, filter, groupBy, selector);
         }
 
         public virtual void Insert<TEntity>(TEntity entity) where TEntity : class

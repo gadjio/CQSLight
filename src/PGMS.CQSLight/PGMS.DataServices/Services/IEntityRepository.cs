@@ -46,6 +46,11 @@ namespace PGMS.Data.Services
         Dictionary<TKey, int> Count<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class;
         Task<Dictionary<TKey, int>> CountAsync<TEntity, TKey>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy) where TEntity : class;
 
+        // Grouped MAX: one aggregate query returning the maximum of <paramref name="selector"/> per <paramref name="groupBy"/> key
+        // (e.g. the most recent timestamp per source). Translated to a single SQL MAX ... GROUP BY.
+        Dictionary<TKey, TValue> Max<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class;
+        Task<Dictionary<TKey, TValue>> MaxAsync<TEntity, TKey, TValue>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, TKey>> groupBy, Expression<Func<TEntity, TValue>> selector) where TEntity : class;
+
         void Insert<TEntity>(TEntity entity) where TEntity : class;
         Task InsertAsync<TEntity>(TEntity entity) where TEntity : class;
 
