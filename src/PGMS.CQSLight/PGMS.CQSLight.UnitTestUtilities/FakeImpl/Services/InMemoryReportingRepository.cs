@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using PGMS.Data.Services;
 using System.Collections;
 using System.Data.Common;
@@ -232,6 +233,79 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
                     }
                 }
             }
+        }
+
+        // Per-CLR-type identity counters — emulates SQL Server IDENTITY for the in-memory store.
+        private readonly Dictionary<Type, long> identityCounters = new();
+
+        public override void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity)
+        {
+            AssignStoreGeneratedKey(entity);
+            base.InsertOperation(unitOfWork, entity);
+        }
+
+        public override Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities)
+        {
+            if (entities != null)
+            {
+                foreach (var entity in entities)
+                {
+                    AssignStoreGeneratedKey(entity);
+                }
+            }
+
+            return base.BulkInsertOperationAsync(unitOfWork, entities);
+        }
+
+        /// <summary>
+        /// Emulates a SQL Server IDENTITY column for the in-memory store. When an entity's single
+        /// primary key is store-generated (<see cref="ValueGenerated.OnAdd"/>) and still holds its
+        /// default (0), assign a monotonically increasing value per entity type — exactly what the
+        /// real DB does on INSERT. Rows created by command / event handlers therefore come back with
+        /// a non-zero surrogate Id, so production handlers and fixtures that resolve entities by that
+        /// Id (e.g. a team/report/message SQL Id) behave like production instead of matching on 0.
+        ///
+        /// Deliberately conservative — skips when there is no PK, a composite PK, a non-integer key,
+        /// a domain-assigned key (<see cref="ValueGenerated.Never"/>, e.g. a pre-generated EntityId),
+        /// or when the Id was already set explicitly (a seeded row) — in which case the counter is
+        /// only advanced past it to avoid a later collision.
+        /// </summary>
+        private void AssignStoreGeneratedKey<TEntity>(TEntity entity) where TEntity : class
+        {
+            if (entity == null) return;
+
+            var entityType = dbContext.Model.FindEntityType(typeof(TEntity));
+            var primaryKey = entityType?.FindPrimaryKey();
+            if (primaryKey == null || primaryKey.Properties.Count != 1) return;
+
+            var keyProperty = primaryKey.Properties[0];
+            if (keyProperty.ValueGenerated != ValueGenerated.OnAdd) return;
+
+            var propertyInfo = keyProperty.PropertyInfo;
+            if (propertyInfo == null || !propertyInfo.CanWrite) return;
+
+            var keyType = Nullable.GetUnderlyingType(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
+            if (keyType != typeof(long) && keyType != typeof(int)) return;
+
+            var clrType = typeof(TEntity);
+            var currentValue = Convert.ToInt64(propertyInfo.GetValue(entity) ?? 0L);
+            identityCounters.TryGetValue(clrType, out var lastAssigned);
+
+            if (currentValue != 0)
+            {
+                // Explicit id (e.g. a seeded row): keep it, but move the counter past it.
+                if (currentValue > lastAssigned) identityCounters[clrType] = currentValue;
+                return;
+            }
+
+            var nextId = lastAssigned + 1;
+            identityCounters[clrType] = nextId;
+
+            // Box the value as the property's own type — SetValue requires an exact match for value
+            // types (a boxed long on an int property would throw). Each branch is cast to object so
+            // the ternary doesn't promote int → long before boxing.
+            object idValue = keyType == typeof(int) ? (object)(int)nextId : (object)nextId;
+            propertyInfo.SetValue(entity, idValue);
         }
     }
 
@@ -509,7 +583,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
             return FetchQuery(resultQuery, orderBy, fetchSize, offset);
         }
 
-		public void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
+		public virtual void InsertOperation<TEntity>(IUnitOfWork unitOfWork, TEntity entity) where TEntity : class
 		{
 			var key = typeof(TEntity);
 			if (!InMemoryMapContainsKey(key))
@@ -526,7 +600,7 @@ namespace PGMS.CQSLight.UnitTestUtilities.FakeImpl.Services
 			return Task.CompletedTask;
 		}
 
-        public Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
+        public virtual Task BulkInsertOperationAsync<TEntity>(IUnitOfWork unitOfWork, List<TEntity> entities) where TEntity : class
         {
             var key = typeof(TEntity);
             if (!InMemoryMapContainsKey(key))
