@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace PGMS.CQSLight.Infra.Security;
 
+/// <summary>Allows a command or query when the caller has at least one declared role (case-insensitive).</summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
 public class AllowedRolesAttribute : Attribute
 {
