@@ -36,6 +36,8 @@ Have a look at our sample app based on PGMS.CQSLight
 
 
 # What's new
+Version 5.0.1.1 -> [Query role authorization](docs/QueryAuthorization.md) with the existing .NET 10 and Blazorise 1.8 dependencies.
+
 Version 3.1 -> async function for entityrepository, bus, EventHandlers, CommandHandlers and QueryHandlers
 Version 3.1.0.5 -> EntityRepository - FindAllOperation (return all entries - not fetchsize / offset)
 
